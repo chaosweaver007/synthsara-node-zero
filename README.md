@@ -14,6 +14,7 @@ Node Zero is intentionally small enough to audit. It demonstrates the interactio
 - State remains in the browser's `localStorage` unless the user exports it.
 - The interface makes no third-party font, analytics, or asset requests.
 - A strict Content Security Policy limits the browser to same-origin resources.
+- The local server adds clickjacking, MIME-sniffing, permissions, and referrer protections.
 - The Witness Layer clearly states that it is local and not cryptographically signed.
 
 ## Functional chambers
@@ -31,7 +32,10 @@ Node Zero is intentionally small enough to audit. It demonstrates the interactio
 ```text
 synthsara-node-zero/
 ├── .github/workflows/quality.yml
-├── scripts/check.mjs
+├── scripts/
+│   ├── build.mjs
+│   ├── check.mjs
+│   └── serve.mjs
 ├── src/
 │   ├── app.js
 │   └── styles.css
@@ -43,17 +47,18 @@ synthsara-node-zero/
 
 ## Requirements
 
-- Node.js 20.19 or newer
+- Node.js 20.11 or newer
 - npm 10 or newer
+
+There are no third-party runtime or development dependencies.
 
 ## Run locally
 
 ```bash
-npm install
 npm run dev
 ```
 
-Vite prints the local development URL in the terminal.
+The local server listens on `http://127.0.0.1:4173` by default. Set `PORT` to use another port.
 
 ## Validate and build
 
@@ -63,7 +68,9 @@ npm run build
 npm run preview
 ```
 
-`npm run check` fails when the project reintroduces inline scripts/styles, third-party asset requests, unsafe HTML injection APIs, non-private consent defaults, or missing accessibility protections.
+- `npm run check` enforces structural, privacy, security, and accessibility rules.
+- `npm run build` creates a deterministic static bundle in `dist/`.
+- `npm run preview` serves the production bundle with security headers.
 
 GitHub Actions runs the same checks and production build for pull requests and branch pushes.
 
@@ -72,6 +79,8 @@ GitHub Actions runs the same checks and production build for pull requests and b
 This version is a browser-only prototype. `localStorage` is convenient and inspectable, but it is not encrypted and is accessible to JavaScript running on the same origin. Do not treat Node Zero as a secure vault for sensitive production data.
 
 The local Witness Layer is append-only through the application interface, but a person with browser developer access can alter local storage. The JSON export is an audit artifact, not a signed or immutable ledger.
+
+The CSP meta tag protects supported browser directives. Protections that require HTTP response headers, including `frame-ancestors`, are supplied by `scripts/serve.mjs` and must also be configured on the eventual production host.
 
 ## Production boundary
 
@@ -83,6 +92,6 @@ The next phase requires:
 4. persistent proposal and governance services;
 5. peer evidence and anti-capture checks for WORTH;
 6. an auditable AI model gateway behind the consent interface;
-7. threat modeling, dependency review, and independent UDS testing.
+7. threat modeling and independent UDS testing.
 
 Until those controls exist, Node Zero must remain labeled as a functional proof node rather than a production network.
