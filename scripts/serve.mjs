@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const requestedRoot = process.argv[2] ?? ".";
+const requestedRoot = process.argv[2] === "dist" ? "dist" : ".";
 const root = resolve(fileURLToPath(new URL(`../${requestedRoot}/`, import.meta.url)));
 const port = Number.parseInt(process.env.PORT ?? "4173", 10);
 
