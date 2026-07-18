@@ -56,8 +56,8 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 function createId() {
-  if (typeof crypto?.randomUUID === "function") {
-    return crypto.randomUUID();
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
   }
 
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -175,6 +175,10 @@ function getElement(id) {
     throw new Error(`Required element #${id} was not found.`);
   }
   return element;
+}
+
+function closestFromEvent(event, selector) {
+  return event.target instanceof Element ? event.target.closest(selector) : null;
 }
 
 function removeChildren(element) {
@@ -406,7 +410,7 @@ function handleMirrorSubmit(event) {
 }
 
 function handleConsentClick(event) {
-  const button = event.target.closest("button[data-consent]");
+  const button = closestFromEvent(event, "button[data-consent]");
   if (!button) {
     return;
   }
@@ -475,7 +479,7 @@ function handleRtmeSubmit(event) {
 }
 
 function handleProposalClick(event) {
-  const button = event.target.closest("button[data-proposal][data-vote]");
+  const button = closestFromEvent(event, "button[data-proposal][data-vote]");
   if (!button) {
     return;
   }
@@ -533,7 +537,7 @@ function closeMobileNavigation() {
 }
 
 function handleNavigation(event) {
-  const button = event.target.closest("[data-go]");
+  const button = closestFromEvent(event, "[data-go]");
   if (!button) {
     return;
   }
@@ -556,6 +560,10 @@ function toggleMobileNavigation() {
 }
 
 function observeSections() {
+  if (!("IntersectionObserver" in globalThis)) {
+    return;
+  }
+
   const navigationButtons = [...document.querySelectorAll(".side-navigation [data-go]")];
   const sections = navigationButtons
     .map((button) => document.getElementById(button.dataset.go))
