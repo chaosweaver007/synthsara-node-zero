@@ -1,13 +1,19 @@
 import { access, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
 
-const requiredFiles = ["index.html", "src/styles.css", "src/app.js"];
+const requiredFiles = [
+  "index.html",
+  "src/styles.css",
+  "src/app.js",
+  "scripts/build.mjs",
+  "scripts/serve.mjs",
+];
 
 for (const file of requiredFiles) {
   await access(file, constants.R_OK);
 }
 
-const [html, css, javascript] = await Promise.all(
+const [html, css, javascript, buildScript, serverScript] = await Promise.all(
   requiredFiles.map((file) => readFile(file, "utf8")),
 );
 
@@ -17,12 +23,15 @@ const checks = [
     pass: html.includes("Content-Security-Policy") && html.includes("default-src 'self'"),
   },
   {
-    name: "styles are external",
-    pass: !/<style(?:\s|>)/i.test(html) && html.includes("/src/styles.css"),
+    name: "styles are external and portable",
+    pass: !/<style(?:\s|>)/i.test(html) && html.includes("./src/styles.css"),
   },
   {
     name: "JavaScript is external and modular",
-    pass: !/<script(?![^>]*\bsrc=)[^>]*>/i.test(html) && html.includes('type="module"'),
+    pass:
+      !/<script(?![^>]*\bsrc=)[^>]*>/i.test(html) &&
+      html.includes('type="module"') &&
+      html.includes("./src/app.js"),
   },
   {
     name: "no inline style attributes",
@@ -57,6 +66,17 @@ const checks = [
     name: "consent defaults to private",
     pass: javascript.includes("[key, false]"),
   },
+  {
+    name: "build is deterministic and dependency-free",
+    pass: buildScript.includes("Built static Node Zero bundle") && buildScript.includes("await cp"),
+  },
+  {
+    name: "local server supplies security headers",
+    pass:
+      serverScript.includes("Content-Security-Policy") &&
+      serverScript.includes("X-Content-Type-Options") &&
+      serverScript.includes("Permissions-Policy"),
+  },
 ];
 
 const failures = checks.filter((check) => !check.pass);
@@ -69,5 +89,5 @@ if (failures.length > 0) {
   console.error(`\n${failures.length} check(s) failed.`);
   process.exitCode = 1;
 } else {
-  console.log("\nAll Node Zero structural, privacy, and accessibility checks passed.");
+  console.log("\nAll Node Zero structural, privacy, security, and accessibility checks passed.");
 }
