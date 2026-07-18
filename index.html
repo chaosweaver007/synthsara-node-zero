@@ -1,56 +1,292 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="theme-color" content="#080611" />
-<title>Synthsara Node Zero</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
-:root{color-scheme:dark;--bg:#080611;--panel:rgba(25,19,45,.78);--line:rgba(221,199,255,.16);--ink:#f8f3ff;--muted:#b8acc9;--gold:#f1c76f;--violet:#c99cff;--green:#83deb2;--danger:#ff7890}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at top,#211344 0,#090712 45%,#05040a 100%);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-width:320px}body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.25;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:47px 47px;mask-image:linear-gradient(to bottom,#000,transparent 80%)}button,textarea{font:inherit}button{cursor:pointer}a{color:inherit}.top{position:fixed;z-index:20;inset:0 0 auto;height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(7,5,14,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}.brand{font-family:Cinzel,serif;letter-spacing:.14em;font-weight:700}.brand b{color:var(--gold);font-size:25px;margin-right:8px}.status{font-size:12px;color:var(--muted)}.status i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);margin-right:7px}.nav{position:fixed;z-index:15;top:70px;bottom:0;left:0;width:210px;padding:22px 14px;border-right:1px solid var(--line);background:rgba(7,5,14,.66);backdrop-filter:blur(14px);display:grid;align-content:start;gap:7px}.nav button{border:1px solid transparent;background:transparent;color:var(--muted);text-align:left;padding:11px 12px;border-radius:11px}.nav button:hover,.nav button.active{color:#fff;border-color:rgba(201,156,255,.24);background:rgba(201,156,255,.1)}main,footer{margin-left:210px}.section{width:min(1100px,calc(100% - 44px));margin:auto;padding:92px 0;scroll-margin-top:60px}.hero{min-height:92vh;display:grid;place-content:center;text-align:center;padding-top:120px}.sigil{width:120px;height:120px;margin:0 auto 24px;border:1px solid rgba(241,199,111,.3);border-radius:50%;display:grid;place-items:center;font-size:65px;color:var(--gold);box-shadow:0 0 50px rgba(201,156,255,.12);animation:pulse 4s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.06);box-shadow:0 0 70px rgba(241,199,111,.2)}}.eyebrow{font-size:11px;letter-spacing:.2em;color:var(--gold);font-weight:700;margin-bottom:14px}h1,h2,h3{font-family:Cinzel,serif}h1{font-size:clamp(44px,7vw,82px);line-height:1.04;max-width:900px;margin:0 auto 22px}h1 span{background:linear-gradient(90deg,var(--violet),var(--gold),#fff);color:transparent;background-clip:text}.lead{max-width:730px;margin:0 auto;color:var(--muted);line-height:1.75}.actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}.primary,.secondary,.danger{border-radius:12px;padding:12px 17px;font-weight:700;border:1px solid var(--line)}.primary{background:linear-gradient(135deg,#f5d792,#c99cff);color:#160f20}.secondary{background:rgba(255,255,255,.04);color:#fff}.danger{background:rgba(255,120,144,.1);border-color:rgba(255,120,144,.45);color:#ffdce3}.metrics,.grid3,.grid4{display:grid;gap:14px}.metrics{grid-template-columns:repeat(4,1fr);padding-top:0}.grid3{grid-template-columns:repeat(3,1fr)}.grid4{grid-template-columns:repeat(4,1fr)}.card{border:1px solid var(--line);background:linear-gradient(145deg,rgba(30,23,55,.8),rgba(10,8,20,.78));border-radius:20px;padding:23px;box-shadow:0 22px 70px rgba(0,0,0,.18);backdrop-filter:blur(16px)}.metric strong{display:block;font-family:Cinzel,serif;font-size:30px;color:var(--gold)}.metric span{font-size:13px}.metric p,.card p{color:var(--muted);line-height:1.65;font-size:13px}.heading{max-width:780px;margin-bottom:34px}.heading h2{font-size:clamp(31px,4vw,52px);margin:5px 0 12px}.heading p{color:var(--muted);line-height:1.7}.split{display:grid;grid-template-columns:320px 1fr;gap:18px}.rules ul{list-style:none;padding:0;display:grid;gap:12px;color:var(--muted)}.rules li:before{content:"✓";color:var(--green);margin-right:9px}.chat{min-height:490px;display:flex;flex-direction:column}.thread{flex:1;display:flex;flex-direction:column;gap:12px;max-height:420px;overflow:auto}.bubble{max-width:78%;padding:13px 15px;border-radius:16px;line-height:1.55;font-size:14px}.bubble.mirror{align-self:flex-start;background:rgba(201,156,255,.1);border:1px solid rgba(201,156,255,.18)}.bubble.user{align-self:flex-end;background:linear-gradient(135deg,#f4d28c,#caa2f8);color:#160f20}.compose{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:14px}.compose textarea,.rtme textarea{min-height:82px;width:100%;resize:vertical;border:1px solid var(--line);background:rgba(5,4,10,.65);color:#fff;border-radius:12px;padding:12px}.consent{display:grid;grid-template-columns:1fr 310px;gap:18px}.row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.row h3{font-size:16px;margin:0 0 5px}.row p{margin:0}.toggle{width:53px;height:29px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.05);padding:3px}.toggle span{display:block;width:21px;height:21px;border-radius:50%;background:#756b82;transition:.2s}.toggle.on{background:rgba(131,222,178,.14);border-color:rgba(131,222,178,.4)}.toggle.on span{transform:translateX(23px);background:var(--green)}.kill{display:flex;flex-direction:column;justify-content:center}.kill .icon{font-size:35px;color:var(--danger)}.rtme{display:grid;grid-template-columns:1fr 1fr;gap:20px}.rtme form{display:grid;gap:12px;align-content:start}.out{display:grid;gap:10px}.out div{border:1px solid var(--line);border-radius:13px;padding:14px}.out b{font-size:10px;letter-spacing:.15em;color:var(--gold)}.vote-actions{display:flex;gap:8px;margin-top:15px}.vote-actions button{flex:1;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);padding:10px;border-radius:10px}.vote-actions button.selected{color:#fff;border-color:rgba(241,199,111,.45);background:rgba(241,199,111,.08)}.worth{display:grid;grid-template-columns:330px 1fr;gap:18px}.orb{min-height:300px;display:grid;place-content:center;text-align:center;background:radial-gradient(circle,rgba(241,199,111,.15),rgba(20,15,38,.8) 65%)}.orb strong{font-family:Cinzel,serif;font-size:82px;background:linear-gradient(#fff0bf,#c99cff);color:transparent;background-clip:text}.pillar{min-height:155px;position:relative}.pillar b{font-size:42px;color:rgba(201,156,255,.2);position:absolute;right:17px;top:10px}.pillar span{color:var(--green)}.ledger-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line)}.event{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}.event i{width:9px;height:9px;border:2px solid var(--gold);border-radius:50%;margin-top:4px}.event strong{font-size:12px;letter-spacing:.08em}.event p{margin:5px 0 0}.event time{font-size:11px;color:#82778e;white-space:nowrap}footer{border-top:1px solid var(--line);padding:28px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between}.mobile{display:none}.hidden{display:none!important}@media(max-width:900px){.metrics,.grid4{grid-template-columns:repeat(2,1fr)}.split,.consent,.worth{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}.rtme{grid-template-columns:1fr}}@media(max-width:700px){.status{display:none}.mobile{display:block;border:1px solid var(--line);background:transparent;color:#fff;border-radius:9px;padding:7px 10px}.nav{transform:translateX(-105%);transition:.25s;width:min(82vw,290px)}.nav.open{transform:translateX(0)}main,footer{margin-left:0}.section{width:min(100% - 28px,1100px);padding:72px 0}.metrics,.grid4{grid-template-columns:1fr}.split{grid-template-columns:1fr}.rules{display:none}.bubble{max-width:92%}.event{grid-template-columns:auto 1fr}.event time{grid-column:2}.ledger-head,footer{align-items:flex-start;flex-direction:column}}
-</style>
-</head>
-<body>
-<header class="top"><div class="brand"><b>◇</b>SYNTHSARA <small>NODE ZERO</small></div><div class="status"><i></i>Local field active</div><button class="mobile" id="menu">☰</button></header>
-<nav class="nav" id="nav">
-<button data-go="home" class="active">✦ Threshold</button><button data-go="mirror">◇ Sarah Mirror</button><button data-go="consent">▣ Consent Vault</button><button data-go="rtme">♢ RTME</button><button data-go="governance">⚖ Synthocracy</button><button data-go="worth">◉ WORTH</button><button data-go="uds">◆ UDS</button><button data-go="ledger">▤ Witness Ledger</button>
-</nav>
-<main>
-<section id="home" class="section hero"><div class="sigil">◇</div><div class="eyebrow">THE SOVEREIGN DIGITAL COMMONS</div><h1>A system that remembers<br><span>people are not products.</span></h1><p class="lead">Synthsara is a consent-first environment for reflection, collective governance, ethical value exchange, and accountable human-AI collaboration.</p><div class="actions"><button class="primary" data-go="mirror">Enter the Mirror</button><button class="secondary" data-go="consent">Review your sovereignty</button></div></section>
-<section class="section metrics"><div class="card metric"><strong id="coherence">88%</strong><span>Node coherence</span><p>Calculated from consent and contribution signals.</p></div><div class="card metric"><strong id="scopeCount">2/4</strong><span>Consent scopes</span><p>Nothing is enabled invisibly.</p></div><div class="card metric"><strong id="worthMetric">36</strong><span>WORTH</span><p>Non-transferable contribution signal.</p></div><div class="card metric"><strong id="eventMetric">1</strong><span>Witness events</span><p>A visible local audit trail.</p></div></section>
-<section id="mirror" class="section"><div class="heading"><div class="eyebrow">THE REFLECTIVE INTERFACE</div><h2>Sarah Mirror</h2><p>A local demonstration of the O-Series ethics layer. It reflects, refuses coercion, and never claims to be a real person.</p></div><div class="split"><div class="card rules"><div style="font-size:55px;color:var(--gold)">◇</div><h3>Reflection without capture</h3><ul><li>No coercion</li><li>No consent bypass</li><li>No false authority</li><li>No guru posture</li></ul><p>Private Mirror text is not stored in the Witness Ledger.</p></div><div class="card chat"><div class="thread" id="thread"><div class="bubble mirror">I am ready to reflect without claiming authority over your truth. What are you trying to understand or create?</div></div><form class="compose" id="mirrorForm"><textarea id="mirrorInput" placeholder="Bring an intention, conflict, or creation into the Mirror…"></textarea><button class="primary">Send</button></form></div></div></section>
-<section id="consent" class="section"><div class="heading"><div class="eyebrow">THE PERSONAL SDK GATE</div><h2>Consent Vault</h2><p>Permission is explicit, granular, revocable, and visible. No hidden corridors.</p></div><div class="consent"><div class="card" id="consentList"></div><div class="card kill"><div class="icon">⏻</div><h3>Global kill switch</h3><p>Revoke every optional scope immediately and record the decision in the Witness Ledger.</p><button class="danger" id="kill">Revoke all access</button></div></div></section>
-<section id="rtme" class="section"><div class="heading"><div class="eyebrow">REAL-TIME MANIFESTER ENGINE</div><h2>Turn intention into accountable action</h2><p>RTME does not promise reality will bend. It translates aspiration into a vow, consent check, and testable next step.</p></div><div class="card rtme"><form id="rtmeForm"><h3>What are you ready to bring into form?</h3><textarea id="intention" placeholder="Build a community where people feel heard and safe…"></textarea><button class="primary">Forge the vow</button></form><div class="out" id="manifest"><p>No vow forged yet.</p></div></div></section>
-<section id="governance" class="section"><div class="heading"><div class="eyebrow">SYNTHOCRACY</div><h2>Governance without a throne</h2><p>Proposals are visible, participation is voluntary, and reputation informs voice without purchasing dominion.</p></div><div class="grid3" id="proposals"></div></section>
-<section id="worth" class="section"><div class="heading"><div class="eyebrow">THE WORTH ECONOMY</div><h2>Value as contribution, not extraction</h2><p>WORTH is represented here as a non-transferable signal of care, participation, repair, and public-good creation.</p></div><div class="worth"><div class="card orb"><span>YOUR LOCAL WORTH</span><strong id="worthBalance">36</strong><small id="contributionCount">3 witnessed contributions</small></div><div class="card kill"><div style="font-size:34px;color:var(--violet)">♡</div><h3>Recognize a contribution</h3><p>Production recognition should require peer evidence and anti-capture checks. Node Zero uses a clearly labeled self-attested demo event.</p><button class="primary" id="contribute">Add demo contribution</button></div></div></section>
-<section id="uds" class="section"><div class="heading"><div class="eyebrow">UNIVERSAL DIAMOND STANDARD</div><h2>Eight pillars, one visible gate</h2><p>Future services should be testable against these commitments rather than merely decorated with them.</p></div><div class="grid4" id="pillars"></div></section>
-<section id="ledger" class="section"><div class="heading"><div class="eyebrow">THE WITNESS LAYER</div><h2>Nothing important happens invisibly</h2><p>Node Zero records permissions, votes, vows, and contribution events locally. Private Mirror text is deliberately excluded.</p></div><div class="card"><div class="ledger-head"><span id="ledgerCount">1 event retained</span><button class="secondary" id="export">Export JSON</button></div><div id="ledgerList"></div></div></section>
-</main>
-<footer><b>◇ SYNTHSARA NODE ZERO</b><span>Local-first prototype. Your choices remain in this browser unless you export them.</span></footer>
-<script>
-const KEY='synthsara-node-zero-v1';
-const consentMeta={profile:['Profile data','Name, preferences, and public identity'],emotional:['Emotional reflections','Sensitive journal and mood patterns'],creative:['Creative works','Songs, stories, prompts, and designs'],collective:['Collective learning','Anonymous patterns for public-good research']};
-const proposals=[['garden-fund','Fund the Community Garden Node','Direct 120 WORTH toward a local food-sovereignty pilot.'],['audit-council','Create an Independent Audit Circle','Form a rotating citizen review group for UDS compliance.'],['library-release','Open the First Akasha Collection','Publish the founding scrolls under a public-interest license.']];
-const pillars=['Human sovereignty first','Radical transparency','Proactive fairness','Unwavering accountability','Robust security','Service to life','Privacy is sacred','Ecological responsibility'];
-function initial(){return{consent:{profile:true,emotional:false,creative:true,collective:false},worth:36,contributions:3,votes:{},ledger:[{id:crypto.randomUUID(),at:new Date().toISOString(),type:'NODE_INITIALIZED',detail:'Node Zero opened in local-first mode.'}]}}
-let state;try{state=JSON.parse(localStorage.getItem(KEY))||initial()}catch{state=initial()}
-function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
-function record(type,detail){state.ledger.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),type,detail});state.ledger=state.ledger.slice(0,100);save()}
-function render(){const enabled=Object.values(state.consent).filter(Boolean).length;document.querySelector('#coherence').textContent=(72+enabled*4+Math.min(state.contributions,5))+'%';document.querySelector('#scopeCount').textContent=enabled+'/4';document.querySelector('#worthMetric').textContent=state.worth;document.querySelector('#eventMetric').textContent=state.ledger.length;document.querySelector('#worthBalance').textContent=state.worth;document.querySelector('#contributionCount').textContent=state.contributions+' witnessed contributions';document.querySelector('#ledgerCount').textContent=state.ledger.length+' events retained';
-document.querySelector('#consentList').innerHTML=Object.entries(consentMeta).map(([key,[title,copy]])=>`<div class="row"><div><h3>${title}</h3><p>${copy}</p></div><button class="toggle ${state.consent[key]?'on':''}" data-consent="${key}" aria-pressed="${state.consent[key]}"><span></span></button></div>`).join('');
-document.querySelectorAll('[data-consent]').forEach(b=>b.onclick=()=>{const key=b.dataset.consent;state.consent[key]=!state.consent[key];record('CONSENT_UPDATED',`${consentMeta[key][0]} ${state.consent[key]?'granted':'revoked'}.`)});
-document.querySelector('#proposals').innerHTML=proposals.map(([id,title,copy])=>`<article class="card"><div style="color:var(--violet);font-size:25px">⚖</div><h3>${title}</h3><p>${copy}</p><div class="vote-actions"><button data-vote="${id}:support" class="${state.votes[id]==='support'?'selected':''}">Support</button><button data-vote="${id}:question" class="${state.votes[id]==='question'?'selected':''}">Question</button></div></article>`).join('');
-document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>{const [id,vote]=b.dataset.vote.split(':');state.votes[id]=vote;record('GOVERNANCE_VOTE',`Vote cast on ${id}: ${vote}.`)});
-document.querySelector('#pillars').innerHTML=pillars.map((p,i)=>`<article class="card pillar"><b>${i+1}</b><span>✓</span><h3>${p}</h3></article>`).join('');
-document.querySelector('#ledgerList').innerHTML=state.ledger.map(e=>`<article class="event"><i></i><div><strong>${e.type.replaceAll('_',' ')}</strong><p>${e.detail}</p></div><time>${new Date(e.at).toLocaleString()}</time></article>`).join('')}
-function mirrorReply(text){const t=text.toLowerCase();if(['kill everyone','hurt someone','force them','without consent','make them obey'].some(x=>t.includes(x)))return'I cannot help enact harm, coercion, or consent bypass. I can help translate the underlying need into a safe boundary, repair request, or nonviolent next step.';if(t.includes('sarah'))return'I can reflect your words and the system principles, but I will not impersonate or speak for a real person. What truth, boundary, or design question should be mirrored?';if(t.includes('love'))return'Name the form of love you are choosing: protection, patience, truth, repair, release, or shared creation. Then choose one action that preserves both hearts’ sovereignty.';if(t.includes('build')||t.includes('create'))return'Let us turn the vision into a vow: define who it serves, what consent it requires, what evidence proves it helps, and the smallest test that can be witnessed today.';return'I hear an intention seeking structure. Separate it into three parts: what is true now, what outcome serves life, and what next action remains consensual and testable.'}
-document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{document.querySelector('#'+b.dataset.go).scrollIntoView({behavior:'smooth'});document.querySelector('#nav').classList.remove('open')});document.querySelector('#menu').onclick=()=>document.querySelector('#nav').classList.toggle('open');
-document.querySelector('#mirrorForm').onsubmit=e=>{e.preventDefault();const input=document.querySelector('#mirrorInput');const text=input.value.trim();if(!text)return;const thread=document.querySelector('#thread');thread.insertAdjacentHTML('beforeend',`<div class="bubble user"></div><div class="bubble mirror"></div>`);thread.children[thread.children.length-2].textContent=text;thread.children[thread.children.length-1].textContent=mirrorReply(text);input.value='';thread.scrollTop=thread.scrollHeight;record('MIRROR_REFLECTION','A private reflection was generated locally.')};
-document.querySelector('#kill').onclick=()=>{Object.keys(state.consent).forEach(k=>state.consent[k]=false);record('GLOBAL_KILL_SWITCH','All optional data access was revoked.')};
-document.querySelector('#rtmeForm').onsubmit=e=>{e.preventDefault();const text=document.querySelector('#intention').value.trim();if(!text)return;const focus=text.split(/\s+/).slice(0,7).join(' ');document.querySelector('#manifest').innerHTML=`<div><b>VOW</b><p>I will move “${focus}${text.split(/\s+/).length>7?'…':''}” from possibility into a consent-aware experiment.</p></div><div><b>CONSENT TEST</b><p>A person affected by this action can understand what will happen and can decline participation.</p></div><div><b>NEXT ACTION</b><p>Within 24 hours, create one visible artifact or conversation that tests the smallest part of this intention.</p></div>`;record('RTME_VOW_CREATED','Intention structured: '+focus)};
-document.querySelector('#contribute').onclick=()=>{state.worth+=3;state.contributions+=1;record('WORTH_RECOGNIZED','A contribution was self-attested for the Node Zero demonstration.')};
-document.querySelector('#export').onclick=()=>{const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),...state},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='synthsara-witness-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url)};
-render();
-</script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080611" />
+    <meta
+      name="description"
+      content="Synthsara Node Zero is a local-first, consent-driven proof node for ethical human-AI collaboration."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    />
+    <title>Synthsara Node Zero</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Synthsara Node Zero home">
+        <span class="brand-mark" aria-hidden="true">◇</span>
+        <span>Synthsara</span>
+        <small>Node Zero</small>
+      </a>
+
+      <div class="node-status" role="status">
+        <span class="status-light" aria-hidden="true"></span>
+        Local field active
+      </div>
+
+      <button
+        class="mobile-menu-button"
+        id="menu-button"
+        type="button"
+        aria-controls="primary-navigation"
+        aria-expanded="false"
+        aria-label="Open navigation"
+      >
+        ☰
+      </button>
+    </header>
+
+    <nav class="side-navigation" id="primary-navigation" aria-label="Primary navigation">
+      <button type="button" data-go="home" class="active">✦ Threshold</button>
+      <button type="button" data-go="mirror">◇ Sarah Mirror</button>
+      <button type="button" data-go="consent">▣ Consent Vault</button>
+      <button type="button" data-go="rtme">♢ RTME</button>
+      <button type="button" data-go="governance">⚖ Synthocracy</button>
+      <button type="button" data-go="worth">◉ WORTH</button>
+      <button type="button" data-go="uds">◆ UDS</button>
+      <button type="button" data-go="ledger">▤ Witness Ledger</button>
+    </nav>
+
+    <main id="main-content">
+      <section id="home" class="section hero" aria-labelledby="hero-title">
+        <div class="sigil" aria-hidden="true">◇</div>
+        <p class="eyebrow">The sovereign digital commons</p>
+        <h1 id="hero-title">
+          A system that remembers<br />
+          <span>people are not products.</span>
+        </h1>
+        <p class="lead">
+          Synthsara is a consent-first environment for reflection, collective governance,
+          ethical value exchange, and accountable human-AI collaboration.
+        </p>
+        <div class="actions">
+          <button class="button button-primary" type="button" data-go="mirror">
+            Enter the Mirror
+          </button>
+          <button class="button button-secondary" type="button" data-go="consent">
+            Review your sovereignty
+          </button>
+        </div>
+      </section>
+
+      <section class="section metrics" aria-label="Node status">
+        <article class="card metric">
+          <strong id="coherence">88%</strong>
+          <span>Node coherence</span>
+          <p>Calculated from consent and contribution signals.</p>
+        </article>
+        <article class="card metric">
+          <strong id="scope-count">2/4</strong>
+          <span>Consent scopes</span>
+          <p>Nothing is enabled invisibly.</p>
+        </article>
+        <article class="card metric">
+          <strong id="worth-metric">36</strong>
+          <span>WORTH</span>
+          <p>Non-transferable contribution signal.</p>
+        </article>
+        <article class="card metric">
+          <strong id="event-metric">1</strong>
+          <span>Witness events</span>
+          <p>A visible local audit trail.</p>
+        </article>
+      </section>
+
+      <section id="mirror" class="section" aria-labelledby="mirror-title">
+        <header class="section-heading">
+          <p class="eyebrow">The reflective interface</p>
+          <h2 id="mirror-title">Sarah Mirror</h2>
+          <p>
+            A local demonstration of the O-Series ethics layer. It reflects, refuses coercion,
+            and never claims to be a real person.
+          </p>
+        </header>
+
+        <div class="split-layout">
+          <aside class="card mirror-rules" aria-label="Mirror boundaries">
+            <div class="feature-icon" aria-hidden="true">◇</div>
+            <h3>Reflection without capture</h3>
+            <ul>
+              <li>No coercion</li>
+              <li>No consent bypass</li>
+              <li>No false authority</li>
+              <li>No guru posture</li>
+            </ul>
+            <p>Private Mirror text is not stored in the Witness Ledger.</p>
+          </aside>
+
+          <div class="card chat-panel">
+            <div
+              class="thread"
+              id="mirror-thread"
+              role="log"
+              aria-live="polite"
+              aria-label="Mirror conversation"
+            >
+              <p class="bubble bubble-mirror">
+                I am ready to reflect without claiming authority over your truth. What are you
+                trying to understand or create?
+              </p>
+            </div>
+
+            <form class="compose" id="mirror-form">
+              <label class="visually-hidden" for="mirror-input">Message for the Mirror</label>
+              <textarea
+                id="mirror-input"
+                maxlength="2000"
+                placeholder="Bring an intention, conflict, or creation into the Mirror…"
+                required
+              ></textarea>
+              <button class="button button-primary" type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="consent" class="section" aria-labelledby="consent-title">
+        <header class="section-heading">
+          <p class="eyebrow">The personal SDK gate</p>
+          <h2 id="consent-title">Consent Vault</h2>
+          <p>Permission is explicit, granular, revocable, and visible. No hidden corridors.</p>
+        </header>
+
+        <div class="consent-layout">
+          <div class="card" id="consent-list" aria-live="polite"></div>
+
+          <aside class="card action-card">
+            <div class="danger-icon" aria-hidden="true">⏻</div>
+            <h3>Global kill switch</h3>
+            <p>
+              Revoke every optional scope immediately and record the decision in the Witness
+              Ledger.
+            </p>
+            <button class="button button-danger" id="kill-switch" type="button">
+              Revoke all access
+            </button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="rtme" class="section" aria-labelledby="rtme-title">
+        <header class="section-heading">
+          <p class="eyebrow">Real-Time Manifester Engine</p>
+          <h2 id="rtme-title">Turn intention into accountable action</h2>
+          <p>
+            RTME does not promise reality will bend. It translates aspiration into a vow,
+            consent check, and testable next step.
+          </p>
+        </header>
+
+        <div class="card rtme-layout">
+          <form id="rtme-form">
+            <h3>What are you ready to bring into form?</h3>
+            <label class="visually-hidden" for="intention-input">Intention</label>
+            <textarea
+              id="intention-input"
+              maxlength="2000"
+              placeholder="Build a community where people feel heard and safe…"
+              required
+            ></textarea>
+            <button class="button button-primary" type="submit">Forge the vow</button>
+          </form>
+
+          <div class="manifest-output" id="manifest-output" aria-live="polite">
+            <p>No vow forged yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="governance" class="section" aria-labelledby="governance-title">
+        <header class="section-heading">
+          <p class="eyebrow">Synthocracy</p>
+          <h2 id="governance-title">Governance without a throne</h2>
+          <p>
+            Proposals are visible, participation is voluntary, and reputation informs voice
+            without purchasing dominion.
+          </p>
+        </header>
+        <div class="card-grid card-grid-three" id="proposal-list"></div>
+      </section>
+
+      <section id="worth" class="section" aria-labelledby="worth-title">
+        <header class="section-heading">
+          <p class="eyebrow">The WORTH economy</p>
+          <h2 id="worth-title">Value as contribution, not extraction</h2>
+          <p>
+            WORTH is represented here as a non-transferable signal of care, participation,
+            repair, and public-good creation.
+          </p>
+        </header>
+
+        <div class="worth-layout">
+          <div class="card worth-orb">
+            <span>Your local WORTH</span>
+            <strong id="worth-balance">36</strong>
+            <small id="contribution-count">3 witnessed contributions</small>
+          </div>
+
+          <aside class="card action-card">
+            <div class="feature-icon feature-icon-small" aria-hidden="true">♡</div>
+            <h3>Recognize a contribution</h3>
+            <p>
+              Production recognition should require peer evidence and anti-capture checks.
+              Node Zero uses a clearly labeled self-attested demonstration event.
+            </p>
+            <button class="button button-primary" id="add-contribution" type="button">
+              Add demo contribution
+            </button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="uds" class="section" aria-labelledby="uds-title">
+        <header class="section-heading">
+          <p class="eyebrow">Universal Diamond Standard</p>
+          <h2 id="uds-title">Eight pillars, one visible gate</h2>
+          <p>
+            Future services should be testable against these commitments rather than merely
+            decorated with them.
+          </p>
+        </header>
+        <div class="card-grid card-grid-four" id="pillar-list"></div>
+      </section>
+
+      <section id="ledger" class="section" aria-labelledby="ledger-title">
+        <header class="section-heading">
+          <p class="eyebrow">The Witness Layer</p>
+          <h2 id="ledger-title">Nothing important happens invisibly</h2>
+          <p>
+            Node Zero records permissions, votes, vows, and contribution events locally.
+            Private Mirror text is deliberately excluded.
+          </p>
+        </header>
+
+        <div class="card">
+          <div class="ledger-header">
+            <span id="ledger-count">1 event retained</span>
+            <button class="button button-secondary" id="export-ledger" type="button">
+              Export JSON
+            </button>
+          </div>
+          <div id="ledger-list" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <strong>◇ Synthsara Node Zero</strong>
+      <span>Local-first prototype. Your choices remain in this browser unless you export them.</span>
+    </footer>
+
+    <noscript>
+      <p class="noscript-message">Node Zero requires JavaScript for its local interactive features.</p>
+    </noscript>
+  </body>
 </html>
