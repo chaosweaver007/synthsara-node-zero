@@ -1,0 +1,17 @@
+{
+  "name": "synthsara-node-zero",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first, auditable proof node for Synthsara.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs dist",
+    "check": "node scripts/check.mjs",
+    "test": "npm run check"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}

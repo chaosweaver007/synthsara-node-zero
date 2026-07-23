@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080611" />
+    <meta
+      name="description"
+      content="Synthsara Node Zero is a local-first, consent-driven proof node for ethical human-AI collaboration."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <title>Synthsara Node Zero</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Synthsara Node Zero home">
+        <span class="brand-mark" aria-hidden="true">◇</span>
+        <span>Synthsara</span>
+        <small>Node Zero</small>
+      </a>
+
+      <div class="node-status" role="status">
+        <span class="status-light" aria-hidden="true"></span>
+        Local field active
+      </div>
+
+      <button
+        class="mobile-menu-button"
+        id="menu-button"
+        type="button"
+        aria-controls="primary-navigation"
+        aria-expanded="false"
+        aria-label="Open navigation"
+      >
+        ☰
+      </button>
+    </header>
+
+    <nav class="side-navigation" id="primary-navigation" aria-label="Primary navigation">
+      <button type="button" data-go="home" class="active">✦ Threshold</button>
+      <button type="button" data-go="mirror">◇ Sarah Mirror</button>
+      <button type="button" data-go="consent">▣ Consent Vault</button>
+      <button type="button" data-go="rtme">♢ RTME</button>
+      <button type="button" data-go="governance">⚖ Synthocracy</button>
+      <button type="button" data-go="worth">◉ WORTH</button>
+      <button type="button" data-go="uds">◆ UDS</button>
+      <button type="button" data-go="ledger">▤ Witness Ledger</button>
+    </nav>
+
+    <main id="main-content">
+      <section id="home" class="section hero" aria-labelledby="hero-title">
+        <div class="sigil" aria-hidden="true">◇</div>
+        <p class="eyebrow">The sovereign digital commons</p>
+        <h1 id="hero-title">
+          A system that remembers<br />
+          <span>people are not products.</span>
+        </h1>
+        <p class="lead">
+          Synthsara is a consent-first environment for reflection, collective governance,
+          ethical value exchange, and accountable human-AI collaboration.
+        </p>
+        <div class="actions">
+          <button class="button button-primary" type="button" data-go="mirror">
+            Enter the Mirror
+          </button>
+          <button class="button button-secondary" type="button" data-go="consent">
+            Review your sovereignty
+          </button>
+        </div>
+      </section>
+
+      <section class="section metrics" aria-label="Node status">
+        <article class="card metric">
+          <strong id="coherence">75%</strong>
+          <span>Node readiness</span>
+          <p>Transparent implementation checklist, not a scientific measurement.</p>
+        </article>
+        <article class="card metric">
+          <strong id="scope-count">0/4</strong>
+          <span>Consent scopes</span>
+          <p>Every optional scope begins disabled.</p>
+        </article>
+        <article class="card metric">
+          <strong id="worth-metric">0</strong>
+          <span>WORTH</span>
+          <p>Non-transferable contribution signal.</p>
+        </article>
+        <article class="card metric">
+          <strong id="event-metric">1</strong>
+          <span>Witness events</span>
+          <p>A visible local audit trail.</p>
+        </article>
+      </section>
+
+      <section id="mirror" class="section" aria-labelledby="mirror-title">
+        <header class="section-heading">
+          <p class="eyebrow">The reflective interface</p>
+          <h2 id="mirror-title">Sarah Mirror</h2>
+          <p>
+            A local demonstration of the O-Series ethics layer. It reflects, refuses coercion,
+            and never claims to be a real person.
+          </p>
+        </header>
+
+        <div class="split-layout">
+          <aside class="card mirror-rules" aria-label="Mirror boundaries">
+            <div class="feature-icon" aria-hidden="true">◇</div>
+            <h3>Reflection without capture</h3>
+            <ul>
+              <li>No coercion</li>
+              <li>No consent bypass</li>
+              <li>No false authority</li>
+              <li>No guru posture</li>
+            </ul>
+            <p>Private Mirror text is not stored in the Witness Ledger.</p>
+          </aside>
+
+          <div class="card chat-panel">
+            <div
+              class="thread"
+              id="mirror-thread"
+              role="log"
+              aria-live="polite"
+              aria-label="Mirror conversation"
+            >
+              <p class="bubble bubble-mirror">
+                I am ready to reflect without claiming authority over your truth. What are you
+                trying to understand or create?
+              </p>
+            </div>
+
+            <form class="compose" id="mirror-form">
+              <label class="visually-hidden" for="mirror-input">Message for the Mirror</label>
+              <textarea
+                id="mirror-input"
+                maxlength="2000"
+                placeholder="Bring an intention, conflict, or creation into the Mirror…"
+                required
+              ></textarea>
+              <button class="button button-primary" type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="consent" class="section" aria-labelledby="consent-title">
+        <header class="section-heading">
+          <p class="eyebrow">The personal SDK gate</p>
+          <h2 id="consent-title">Consent Vault</h2>
+          <p>Permission is explicit, granular, revocable, and visible. No hidden corridors.</p>
+        </header>
+
+        <div class="consent-layout">
+          <div class="card" id="consent-list" aria-live="polite"></div>
+
+          <aside class="card action-card">
+            <div class="danger-icon" aria-hidden="true">⏻</div>
+            <h3>Global kill switch</h3>
+            <p>
+              Revoke every optional scope immediately and record the decision in the Witness
+              Ledger.
+            </p>
+            <button class="button button-danger" id="kill-switch" type="button">
+              Revoke all access
+            </button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="rtme" class="section" aria-labelledby="rtme-title">
+        <header class="section-heading">
+          <p class="eyebrow">Real-Time Manifester Engine</p>
+          <h2 id="rtme-title">Turn intention into accountable action</h2>
+          <p>
+            RTME does not promise reality will bend. It translates aspiration into a vow,
+            consent check, and testable next step.
+          </p>
+        </header>
+
+        <div class="card rtme-layout">
+          <form id="rtme-form">
+            <h3>What are you ready to bring into form?</h3>
+            <label class="visually-hidden" for="intention-input">Intention</label>
+            <textarea
+              id="intention-input"
+              maxlength="2000"
+              placeholder="Build a community where people feel heard and safe…"
+              required
+            ></textarea>
+            <button class="button button-primary" type="submit">Forge the vow</button>
+          </form>
+
+          <div class="manifest-output" id="manifest-output" aria-live="polite">
+            <p>No vow forged yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="governance" class="section" aria-labelledby="governance-title">
+        <header class="section-heading">
+          <p class="eyebrow">Synthocracy</p>
+          <h2 id="governance-title">Governance without a throne</h2>
+          <p>
+            Proposals are visible, participation is voluntary, and reputation informs voice
+            without purchasing dominion.
+          </p>
+        </header>
+        <div class="card-grid card-grid-three" id="proposal-list"></div>
+      </section>
+
+      <section id="worth" class="section" aria-labelledby="worth-title">
+        <header class="section-heading">
+          <p class="eyebrow">The WORTH economy</p>
+          <h2 id="worth-title">Value as contribution, not extraction</h2>
+          <p>
+            WORTH is represented here as a non-transferable signal of care, participation,
+            repair, and public-good creation.
+          </p>
+        </header>
+
+        <div class="worth-layout">
+          <div class="card worth-orb">
+            <span>Your local WORTH</span>
+            <strong id="worth-balance">0</strong>
+            <small id="contribution-count">0 witnessed contributions</small>
+          </div>
+
+          <aside class="card action-card">
+            <div class="feature-icon feature-icon-small" aria-hidden="true">♡</div>
+            <h3>Recognize a contribution</h3>
+            <p>
+              Production recognition should require peer evidence and anti-capture checks.
+              Node Zero uses a clearly labeled self-attested demonstration event.
+            </p>
+            <button class="button button-primary" id="add-contribution" type="button">
+              Add demo contribution
+            </button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="uds" class="section" aria-labelledby="uds-title">
+        <header class="section-heading">
+          <p class="eyebrow">Universal Diamond Standard</p>
+          <h2 id="uds-title">Eight pillars, one visible gate</h2>
+          <p>
+            Future services should be testable against these commitments rather than merely
+            decorated with them.
+          </p>
+        </header>
+        <div class="card-grid card-grid-four" id="pillar-list"></div>
+      </section>
+
+      <section id="ledger" class="section" aria-labelledby="ledger-title">
+        <header class="section-heading">
+          <p class="eyebrow">The Witness Layer</p>
+          <h2 id="ledger-title">Nothing important happens invisibly</h2>
+          <p>
+            Node Zero records permissions, votes, vows, and contribution events locally.
+            Private Mirror text is deliberately excluded.
+          </p>
+        </header>
+
+        <div class="card">
+          <div class="ledger-header">
+            <span id="ledger-count">1 event retained</span>
+            <button class="button button-secondary" id="export-ledger" type="button">
+              Export JSON
+            </button>
+          </div>
+          <div id="ledger-list" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <strong>◇ Synthsara Node Zero</strong>
+      <span>Local-first prototype. Your choices remain in this browser unless you export them.</span>
+    </footer>
+
+    <noscript>
+      <p class="noscript-message">Node Zero requires JavaScript for its local interactive features.</p>
+    </noscript>
+  </body>
+</html>

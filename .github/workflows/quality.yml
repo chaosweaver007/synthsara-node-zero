@@ -1,0 +1,31 @@
+name: Node Zero quality gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - build/node-zero-v1
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run structural, privacy, and accessibility checks
+        run: npm run check
+
+      - name: Build production bundle
+        run: npm run build
