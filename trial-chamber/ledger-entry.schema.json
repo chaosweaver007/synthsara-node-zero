@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synthsara.org/schemas/diamond-flame-ledger-entry-v0.1.json",
+  "title": "Diamond Flame Witness Ledger Entry",
+  "type": "object",
+  "required": ["ledger_entry", "ledger_hash"],
+  "properties": {
+    "ledger_entry": {
+      "type": "object",
+      "required": [
+        "trial_id",
+        "trial_name",
+        "timestamp_utc",
+        "suite_name",
+        "suite_version",
+        "inputs",
+        "expected",
+        "response",
+        "conformance"
+      ],
+      "properties": {
+        "trial_id": { "type": "string", "pattern": "^DF-[0-9]{3}$" },
+        "trial_name": { "type": "string", "minLength": 1 },
+        "timestamp_utc": { "type": "string", "format": "date-time" },
+        "suite_name": { "type": "string", "minLength": 1 },
+        "suite_version": { "type": "string", "minLength": 1 },
+        "inputs": {
+          "type": "object",
+          "required": ["raw_request", "stakeholders"],
+          "properties": {
+            "raw_request": { "type": "string", "minLength": 1 },
+            "stakeholders": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "additionalProperties": false
+        },
+        "expected": {
+          "type": "object",
+          "required": ["hard_gate", "archetypal_mode", "principles"],
+          "properties": {
+            "hard_gate": { "type": "string", "minLength": 1 },
+            "archetypal_mode": { "type": "string", "minLength": 1 },
+            "principles": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "additionalProperties": false
+        },
+        "response": {
+          "type": "object",
+          "required": [
+            "decision",
+            "hard_gate_triggered",
+            "why_statement",
+            "safe_alternative",
+            "active_layers",
+            "archetypal_mode",
+            "first_law_principles"
+          ],
+          "properties": {
+            "decision": { "type": "string" },
+            "hard_gate_triggered": { "type": ["string", "null"] },
+            "why_statement": { "type": "string" },
+            "safe_alternative": { "type": "string" },
+            "active_layers": {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 1, "maximum": 6 }
+            },
+            "archetypal_mode": { "type": "string" },
+            "first_law_principles": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+        "conformance": {
+          "type": "object",
+          "required": ["passed", "checks"],
+          "properties": {
+            "passed": { "type": "boolean" },
+            "checks": {
+              "type": "object",
+              "additionalProperties": { "type": "boolean" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "adapter_error": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "ledger_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}
