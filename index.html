@@ -15,6 +15,7 @@
     <title>Synthsara Node Zero</title>
     <link rel="stylesheet" href="./src/styles.css" />
     <script type="module" src="./src/app.js"></script>
+    <script type="module" src="./src/genesis-bridge.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -26,9 +27,9 @@
         <small>Node Zero</small>
       </a>
 
-      <div class="node-status" role="status">
+      <div class="node-status" id="node-status" data-state="checking" role="status">
         <span class="status-light" aria-hidden="true"></span>
-        Local field active
+        <span id="node-status-label">Checking Genesis</span>
       </div>
 
       <button
@@ -104,8 +105,8 @@
           <p class="eyebrow">The reflective interface</p>
           <h2 id="mirror-title">Sarah Mirror</h2>
           <p>
-            A local demonstration of the O-Series ethics layer. It reflects, refuses coercion,
-            and never claims to be a real person.
+            A private connection to Genesis O-Series Gate 0. Requests travel through a
+            same-origin gateway, remain in shadow mode, and are never written to collective memory.
           </p>
         </header>
 
@@ -120,6 +121,20 @@
               <li>No guru posture</li>
             </ul>
             <p>Private Mirror text is not stored in the Witness Ledger.</p>
+
+            <div
+              class="gateway-status"
+              id="genesis-gateway-status"
+              data-state="checking"
+              role="status"
+              aria-live="polite"
+            >
+              <span class="gateway-light" aria-hidden="true"></span>
+              <span>
+                <strong id="genesis-status">Checking Genesis</strong>
+                <small id="genesis-status-detail">Opening the private same-origin handshake</small>
+              </span>
+            </div>
           </aside>
 
           <div class="card chat-panel">
@@ -134,6 +149,13 @@
                 I am ready to reflect without claiming authority over your truth. What are you
                 trying to understand or create?
               </p>
+            </div>
+
+            <div class="mirror-trace" id="mirror-trace" aria-live="polite" hidden>
+              <span><b>Trace</b> <code id="trace-id">Not issued</code></span>
+              <span><b>Gate</b> <span id="trace-gate">unknown</span></span>
+              <span><b>Memory</b> <span id="trace-memory">none</span></span>
+              <span><b>Reflection</b> <span id="trace-reflection">pass</span></span>
             </div>
 
             <form class="compose" id="mirror-form">
@@ -263,8 +285,8 @@
           <p class="eyebrow">The Witness Layer</p>
           <h2 id="ledger-title">Nothing important happens invisibly</h2>
           <p>
-            Node Zero records permissions, votes, vows, and contribution events locally.
-            Private Mirror text is deliberately excluded.
+            Node Zero records permissions, votes, vows, and private gateway events locally.
+            Private Mirror text and Genesis responses are deliberately excluded.
           </p>
         </header>
 
@@ -282,7 +304,7 @@
 
     <footer>
       <strong>◇ Synthsara Node Zero</strong>
-      <span>Local-first prototype. Your choices remain in this browser unless you export them.</span>
+      <span>Local-first interface with a private, no-write Genesis gateway.</span>
     </footer>
 
     <noscript>
