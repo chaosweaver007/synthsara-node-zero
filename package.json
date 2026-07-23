@@ -1,15 +1,15 @@
 {
   "name": "synthsara-node-zero",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "A local-first, auditable proof node for Synthsara.",
+  "description": "A local-first, auditable proof node connected to the Genesis O-Series gateway.",
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "preview": "node scripts/serve.mjs dist",
     "check": "node scripts/check.mjs",
-    "test": "npm run check"
+    "test": "npm run check && node --test tests/*.test.mjs"
   },
   "engines": {
     "node": ">=20.11.0"
