@@ -1,3 +1,8 @@
+const gatewayStyles = document.createElement("link");
+gatewayStyles.rel = "stylesheet";
+gatewayStyles.href = "./src/genesis-bridge.css";
+document.head.append(gatewayStyles);
+
 const GATEWAY_PATH = "/api/genesis";
 const STORAGE_KEY = "synthsara-node-zero-v2";
 const MAX_LEDGER_EVENTS = 100;
@@ -52,13 +57,36 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function createPrivateState() {
+  return {
+    version: 2,
+    consent: {
+      profile: false,
+      emotional: false,
+      creative: false,
+      collective: false,
+    },
+    worth: 0,
+    contributions: 0,
+    votes: {},
+    ledger: [
+      {
+        id: createId(),
+        at: new Date().toISOString(),
+        type: "NODE_INITIALIZED",
+        detail: "Node Zero opened in private, local-first mode.",
+      },
+    ],
+  };
+}
+
 function recordPrivateEvent(type, detail) {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    const state = raw ? JSON.parse(raw) : null;
-    if (!state || typeof state !== "object" || Array.isArray(state)) {
-      return;
-    }
+    const parsed = raw ? JSON.parse(raw) : createPrivateState();
+    const state = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : createPrivateState();
 
     const ledger = Array.isArray(state.ledger) ? state.ledger : [];
     ledger.unshift({
