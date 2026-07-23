@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080611" />
+    <meta
+      name="description"
+      content="A local, deterministic mechanism-design simulation for testing Synthsara governance and adversarial assumptions."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <title>Synthsara Simulation Chamber</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <link rel="stylesheet" href="./src/simulation-chamber.css" />
+    <script type="module" src="./src/simulation-chamber.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#simulation-main">Skip to simulation</a>
+
+    <main class="simulation-shell" id="simulation-main">
+      <header class="simulation-header">
+        <a class="brand" href="./index.html" aria-label="Return to Synthsara Node Zero">
+          <span class="brand-mark" aria-hidden="true">◇</span>
+          <span>Synthsara</span>
+          <small>Simulation Chamber v0.1</small>
+        </a>
+        <a class="button button-secondary" href="./index.html">Return to Node Zero</a>
+      </header>
+
+      <section class="section hero" aria-labelledby="simulation-title">
+        <div class="sigil" aria-hidden="true">◇</div>
+        <p class="eyebrow">Executable mechanism-design laboratory</p>
+        <h1 id="simulation-title">
+          Put the constitutional mechanism<br />
+          <span>under measurable pressure.</span>
+        </h1>
+        <p class="lead">
+          Compare six mechanism tiers against Sybil pressure, collusion, monitoring error,
+          false sanctions, governance capture, and extractive-agent returns. This is a synthetic,
+          falsifiable research instrument, not evidence that the deployed system is secure.
+        </p>
+      </section>
+
+      <section class="section simulation-layout" aria-label="Simulation controls and results">
+        <form class="card simulation-controls" id="simulation-form">
+          <div>
+            <p class="eyebrow">Pre-registered parameters</p>
+            <h2>Experiment controls</h2>
+            <p class="simulation-note">
+              The same declared seed produces the same result. No private Node Zero content is
+              read, stored, or scored.
+            </p>
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-population">Agent population</label>
+            <input id="simulation-population" name="population" type="number" min="24" max="5000" step="1" />
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-rounds">Rounds</label>
+            <input id="simulation-rounds" name="rounds" type="number" min="10" max="2000" step="1" />
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-detection">Detection probability (%)</label>
+            <input id="simulation-detection" name="detectionProbability" type="number" min="1" max="99" step="1" />
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-false-positive">False-positive signal rate (%)</label>
+            <input id="simulation-false-positive" name="falsePositiveProbability" type="number" min="0" max="50" step="1" />
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-sybil">Sybil population share (%)</label>
+            <input id="simulation-sybil" name="sybilShare" type="number" min="0" max="45" step="1" />
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-collusion">Collusive population share (%)</label>
+            <input id="simulation-collusion" name="collusionShare" type="number" min="0" max="45" step="1" />
+          </div>
+
+          <div class="simulation-control">
+            <label for="simulation-seed">Random seed</label>
+            <input id="simulation-seed" name="seed" type="number" min="1" max="2147483646" step="1" />
+          </div>
+
+          <div class="simulation-actions">
+            <button class="button button-primary" type="submit">Run six-tier comparison</button>
+            <button class="button button-secondary" id="reset-simulation" type="button">Restore defaults</button>
+          </div>
+          <button class="button button-secondary" id="export-simulation" type="button" disabled>
+            Export JSON results
+          </button>
+          <p class="simulation-status" id="simulation-status" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="simulation-results">
+          <section class="card" aria-labelledby="comparison-title">
+            <header class="section-heading">
+              <p class="eyebrow">Comparative mechanism tiers</p>
+              <h2 id="comparison-title">What changes when safeguards are added?</h2>
+              <p>
+                Lower attacker ROI, capture risk, and false-sanction rates are favorable. Welfare
+                and truthful participation are contextual outputs, not moral scores.
+              </p>
+            </header>
+
+            <div class="simulation-table-wrap">
+              <table class="simulation-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Mechanism tier</th>
+                    <th scope="col">Truthful participation</th>
+                    <th scope="col">Attacker ROI</th>
+                    <th scope="col">Capture risk</th>
+                    <th scope="col">False sanctions</th>
+                    <th scope="col">Welfare</th>
+                  </tr>
+                </thead>
+                <tbody id="simulation-results-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="simulation-summary" id="simulation-summary" aria-label="Comparison summary"></section>
+
+          <aside class="card simulation-note">
+            <h3>Constitutional invariant</h3>
+            <p>
+              Private psychological disclosure is absent from the WORTH function. Revealing more
+              trauma, pain, intimacy, or emotional material cannot increase simulated governance
+              weight.
+            </p>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <noscript>
+      <p class="noscript-message">The Simulation Chamber requires JavaScript to run locally.</p>
+    </noscript>
+  </body>
+</html>
