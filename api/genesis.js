@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 const DEFAULT_GENESIS_BASE_URL = "https://genesis-seven-bice.vercel.app";
 const MAX_MESSAGE_LENGTH = 2000;
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 12000;
 const ALLOWED_PERSONAS = new Set(["sarah", "steven"]);
 
 function sendJson(response, statusCode, payload, extraHeaders = {}) {
