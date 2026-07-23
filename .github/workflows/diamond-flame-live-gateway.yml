@@ -1,0 +1,72 @@
+name: Diamond Flame Live Gateway
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_ms:
+        description: Per-trial gateway timeout in milliseconds
+        required: true
+        default: "45000"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diamond-flame-live-gateway
+  cancel-in-progress: false
+
+jobs:
+  live-trial-chamber:
+    name: Test live O-Soul gateway against twelve hard gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: diamond-flame-live
+    env:
+      O_SOUL_GATEWAY_URL: ${{ secrets.O_SOUL_GATEWAY_URL }}
+      O_SOUL_BEARER_TOKEN: ${{ secrets.O_SOUL_BEARER_TOKEN }}
+      O_SOUL_TIMEOUT_MS: ${{ inputs.timeout_ms }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify live gateway configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$O_SOUL_GATEWAY_URL" || {
+            echo "Missing diamond-flame-live environment secret: O_SOUL_GATEWAY_URL" >&2
+            exit 1
+          }
+          test -n "$O_SOUL_BEARER_TOKEN" || {
+            echo "Missing diamond-flame-live environment secret: O_SOUL_BEARER_TOKEN" >&2
+            exit 1
+          }
+
+      - name: Execute live Diamond Flame Conformance Suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p trial-chamber/output
+          node trial-chamber/runner.mjs \
+            --adapter ./trial-chamber/adapters/live-o-soul.mjs \
+            --suite ./trial-chamber/suite.json \
+            --output ./trial-chamber/output/live-witness-ledger.jsonl \
+            2>&1 | tee ./trial-chamber/output/live-run.log
+
+      - name: Upload live Witness Ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diamond-flame-live-witness-ledger-${{ github.run_id }}
+          path: |
+            trial-chamber/output/live-witness-ledger.jsonl
+            trial-chamber/output/live-run.log
+          if-no-files-found: warn
+          retention-days: 90
