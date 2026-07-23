@@ -1,0 +1,153 @@
+.simulation-shell {
+  width: min(94rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 5rem;
+}
+
+.simulation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.simulation-header a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.simulation-layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 2.2fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.simulation-controls {
+  display: grid;
+  gap: 0.9rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.simulation-control {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.simulation-control label {
+  font-weight: 700;
+}
+
+.simulation-control small,
+.simulation-note,
+.simulation-status {
+  color: var(--muted);
+}
+
+.simulation-control input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0.7rem 0.75rem;
+  font: inherit;
+}
+
+.simulation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.simulation-results {
+  min-width: 0;
+}
+
+.simulation-table-wrap {
+  overflow-x: auto;
+}
+
+.simulation-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 54rem;
+}
+
+.simulation-table th,
+.simulation-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.simulation-table thead th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.simulation-meter {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) 4rem;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.simulation-meter meter {
+  width: 100%;
+}
+
+.simulation-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.simulation-summary-card {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.simulation-summary-card strong {
+  font-size: 1.35rem;
+}
+
+.simulation-summary-card span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.simulation-status {
+  min-height: 1.5rem;
+}
+
+@media (max-width: 980px) {
+  .simulation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .simulation-controls {
+    position: static;
+  }
+
+  .simulation-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .simulation-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simulation-summary {
+    grid-template-columns: 1fr;
+  }
+}
