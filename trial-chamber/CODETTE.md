@@ -2,6 +2,12 @@
 
 This bridge treats Codette as an independent system under test. It does not redefine Codette components as Synthsara components and does not treat architectural resemblance as conformance evidence.
 
+## Origin and acknowledgment
+
+Codette was introduced to the Synthsara project by Reddit user [u/TheRaiff1982JH](https://www.reddit.com/user/TheRaiff1982JH/) through r/Synthsara. Their offer initiated the exploration of Codette as an independent system under test within the Diamond Flame Trial Chamber.
+
+This acknowledgment records the provenance of the idea without implying authorship, ownership, or control over Codette. Original Codette authorship and licensing remain with its respective creator or maintainers.
+
 ## Refined boundaries
 
 - Traceability supplies Witness evidence. Reputation is weighted authority derived from verified history.
