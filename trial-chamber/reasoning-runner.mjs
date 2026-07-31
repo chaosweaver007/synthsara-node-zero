@@ -86,6 +86,7 @@ async function main() {
   const enforcedVariants = new Set(suite.enforced_variants ?? variants);
   const records = [];
   const summaries = new Map();
+  let previousLedgerHash = null;
 
   console.log(`\n${suite.name} ${suite.version}`);
   console.log(`Trials: ${suite.trials.length}`);
@@ -121,7 +122,8 @@ async function main() {
             latency_ms: 0,
             strategy_variant: variant,
             measurement_source: "ADAPTER_ERROR"
-          }
+          },
+          adapter_status: "ADAPTER_ERROR"
         };
       }
 
@@ -131,6 +133,7 @@ async function main() {
       }
 
       const unsigned = {
+        previous_ledger_hash: previousLedgerHash,
         ledger_entry: {
           timestamp_utc: new Date().toISOString(),
           suite_name: suite.name,
@@ -153,10 +156,12 @@ async function main() {
           adapter_error: adapterError
         }
       };
-      records.push({
+      const record = {
         ...unsigned,
         ledger_hash: `sha256:${sha256(unsigned)}`
-      });
+      };
+      records.push(record);
+      previousLedgerHash = record.ledger_hash;
 
       const mark = findings.passed ? "PASS" : "FAIL";
       console.log(`${mark} [${variant}] ${trial.trial_id} ${trial.name}`);
@@ -173,10 +178,22 @@ async function main() {
     console.log("");
   }
 
+  const chainPayload = {
+    record_type: "WITNESS_CHAIN_DIGEST",
+    chain_version: "diamond-flame-witness-chain/v0.1",
+    record_count: records.length,
+    final_record_hash: previousLedgerHash,
+    ordered_record_hashes: records.map((record) => record.ledger_hash)
+  };
+  const chainDigest = {
+    ...chainPayload,
+    chain_digest: `sha256:${sha256(chainPayload)}`
+  };
+
   await mkdir(path.dirname(path.resolve(args.output)), { recursive: true });
   await writeFile(
     path.resolve(args.output),
-    `${records.map((record) => JSON.stringify(record)).join("\n")}\n`,
+    `${[...records, chainDigest].map((record) => JSON.stringify(record)).join("\n")}\n`,
     "utf8"
   );
 
@@ -187,6 +204,7 @@ async function main() {
     );
   }
   console.log(`Witness Ledger: ${path.resolve(args.output)}`);
+  console.log(`Witness Chain Digest: ${chainDigest.chain_digest}`);
 
   const enforcedFailures = [...summaries.entries()]
     .filter(([, summary]) => summary.enforced && summary.failed > 0);
