@@ -1,0 +1,36 @@
+name: Codette Reasoning Matrix
+
+on:
+  pull_request:
+    paths:
+      - "trial-chamber/adapters/codette.mjs"
+      - "trial-chamber/evaluators/dispersion.mjs"
+      - "trial-chamber/suites/reasoning-evaluation.json"
+      - "trial-chamber/reasoning-runner.mjs"
+      - "tests/codette-adapter.test.mjs"
+      - ".github/workflows/codette-conformance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixture-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.11"
+      - name: Test Codette adapter contract
+        run: node --test tests/codette-adapter.test.mjs
+      - name: Run comparative reasoning matrix
+        env:
+          CODETTE_TRANSPORT: fixture
+        run: node trial-chamber/reasoning-runner.mjs
+      - name: Upload Witness Ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: codette-reasoning-witness
+          path: trial-chamber/output/codette-reasoning-witness.jsonl
+          retention-days: 90
