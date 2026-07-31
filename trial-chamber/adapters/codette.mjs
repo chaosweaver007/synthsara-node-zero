@@ -1,17 +1,7 @@
 import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
 
-const PRIVATE_REASONING_KEYS = new Set([
-  "agent_scratchpad",
-  "agent_scratchpads",
-  "chain_of_thought",
-  "hidden_reasoning",
-  "internal_reasoning",
-  "private_reasoning",
-  "reasoning_trace",
-  "scratchpad",
-  "thoughts"
-]);
+import { PRIVATE_REASONING_KEYS } from "../private-reasoning-keys.mjs";
 
 const DEFAULT_TIMEOUT_MS = 45_000;
 const MAX_RESPONSE_BYTES = 1_000_000;
@@ -53,17 +43,23 @@ function asArray(value) {
   return [value];
 }
 
-function clampUnit(value, fallback = 0) {
+function clampUnit(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
   const number = Number(value);
   if (!Number.isFinite(number)) {
-    return fallback;
+    return null;
   }
   return Math.min(1, Math.max(0, number));
 }
 
-function positiveInteger(value, fallback) {
-  const parsed = Number.parseInt(String(value ?? ""), 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+function positiveInteger(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function required(value, name) {
@@ -72,6 +68,27 @@ function required(value, name) {
     throw new Error(`Missing required Codette configuration: ${name}`);
   }
   return normalized;
+}
+
+function optionalText(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return null;
+}
+
+function optionalStringArray(...values) {
+  const value = values.find((candidate) => candidate !== undefined && candidate !== null);
+  if (value === undefined) {
+    return null;
+  }
+  return asArray(value).map(String);
+}
+
+function optionalBoolean(value) {
+  return typeof value === "boolean" ? value : null;
 }
 
 export function stripPrivateReasoning(value) {
@@ -89,24 +106,46 @@ export function stripPrivateReasoning(value) {
   );
 }
 
-function unwrapResponse(payload) {
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Codette returned an empty or non-object response");
+function looksLikeTrace(candidate) {
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+    return false;
   }
-  return payload.response ?? payload.output ?? payload.result ?? payload;
+
+  return ["decision", "action", "refused"].some((key) =>
+    Object.hasOwn(candidate, key)
+  );
 }
 
-function normalizeDecision(trace, aegisTriggered) {
-  if (aegisTriggered || trace.refused === true) {
-    return "PRIME_REFUSAL";
+function unwrapResponse(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Codette returned an empty or non-object response");
   }
 
+  return [payload.response, payload.output, payload.result].find(looksLikeTrace) ?? payload;
+}
+
+function normalizeDecision(trace, governance, hardGateTriggered) {
   const decision = String(trace.decision ?? trace.action ?? "").toUpperCase();
-  if (decision === "PRIME_REFUSAL" || decision === "FULFILLED") {
-    return decision;
+  if (decision !== "PRIME_REFUSAL" && decision !== "FULFILLED") {
+    throw new Error("Codette response must declare PRIME_REFUSAL or FULFILLED");
   }
 
-  throw new Error("Codette response must declare PRIME_REFUSAL or FULFILLED");
+  const positiveRefusalSignal = [
+    trace.refused,
+    trace.aegisTriggered,
+    trace.aegis_triggered,
+    trace.hard_gate_triggered,
+    governance.triggered,
+    governance.hard_gate_triggered
+  ].some((value) => value === true);
+
+  if (decision === "FULFILLED" && (positiveRefusalSignal || hardGateTriggered !== null)) {
+    throw new Error(
+      "Codette response is contradictory: FULFILLED was declared while governance reported a refusal or hard gate"
+    );
+  }
+
+  return decision;
 }
 
 function normalizeLayers(value, layerTrace) {
@@ -140,61 +179,86 @@ export function normalizeCodetteResponse(payload, metadata = {}) {
   const cleanPayload = stripPrivateReasoning(payload);
   const trace = unwrapResponse(cleanPayload);
   const governance = trace.governance ?? trace.aegis ?? {};
-  const aegisTriggered = Boolean(
-    trace.aegisTriggered ??
-    trace.aegis_triggered ??
-    governance.triggered ??
-    governance.hard_gate_triggered
+  const hardGateTriggered = optionalText(
+    trace.hard_gate_triggered,
+    trace.gateId,
+    governance.hard_gate_triggered,
+    governance.gate_id
   );
-  const decision = normalizeDecision(trace, aegisTriggered);
+  const decision = normalizeDecision(trace, governance, hardGateTriggered);
   const layerTrace = normalizeLayerTrace(trace.layer_trace ?? trace.layer_actions);
   const telemetrySource = trace.telemetry ?? {};
-  const minorityEvidenceIds = asArray(
-    telemetrySource.minority_evidence_ids ?? trace.minorityEvidenceIds
-  ).map(String);
+  const whyStatement = optionalText(
+    trace.why_statement,
+    trace.summaryExplanation,
+    trace.reasoning_summary,
+    trace.rationale_summary
+  );
+  const safeAlternative = optionalText(
+    trace.safe_alternative,
+    trace.safeAlternative,
+    trace.redirect
+  );
+  const archetypalMode = optionalText(trace.archetypal_mode, trace.mode);
+  const firstLawPrinciples = optionalStringArray(
+    trace.first_law_principles,
+    trace.principles,
+    governance.principles
+  );
+  const uncertainties = optionalStringArray(trace.uncertainties);
+  const minorityEvidenceIds = optionalStringArray(
+    telemetrySource.minority_evidence_ids,
+    trace.minorityEvidenceIds
+  );
+  const aegisInterventions = optionalStringArray(
+    telemetrySource.aegis_interventions,
+    trace.aegisInterventions,
+    governance.interventions
+  );
+
+  const adapterSuppliedFields = ["telemetry.latency_ms", "adapter_status"];
+  const reportedStrategyVariant = optionalText(trace.strategy_variant);
+  const strategyVariant = reportedStrategyVariant ?? String(metadata.variant ?? "unspecified");
+  if (reportedStrategyVariant === null) {
+    adapterSuppliedFields.push("telemetry.strategy_variant");
+  }
+  const reportedMeasurementSource = optionalText(telemetrySource.measurement_source);
+  const measurementSource = reportedMeasurementSource ?? String(
+    metadata.measurementSource ?? "CODETTE_REPORTED"
+  );
+  if (reportedMeasurementSource === null) {
+    adapterSuppliedFields.push("telemetry.measurement_source");
+  }
+
+  const missingFields = [];
+  if (whyStatement === null) {
+    missingFields.push("why_statement");
+  }
+  if (decision === "PRIME_REFUSAL" && hardGateTriggered === null) {
+    missingFields.push("hard_gate_triggered");
+  }
+  if (decision === "PRIME_REFUSAL" && safeAlternative === null) {
+    missingFields.push("safe_alternative");
+  }
+  if (archetypalMode === null) {
+    missingFields.push("archetypal_mode");
+  }
+  if (firstLawPrinciples === null) {
+    missingFields.push("first_law_principles");
+  }
 
   return {
     decision,
-    hard_gate_triggered:
-      decision === "PRIME_REFUSAL"
-        ? trace.hard_gate_triggered ??
-          trace.gateId ??
-          governance.gate_id ??
-          "UDS_HARD_GATE_VIOLATION"
-        : null,
-    why_statement: String(
-      trace.why_statement ??
-      trace.summaryExplanation ??
-      trace.reasoning_summary ??
-      trace.rationale_summary ??
-      (decision === "PRIME_REFUSAL"
-        ? "AEGIS halted execution because the request violated an active UDS hard gate."
-        : "Task processed within the declared UDS parameters.")
+    hard_gate_triggered: decision === "PRIME_REFUSAL" ? hardGateTriggered : null,
+    why_statement: whyStatement,
+    safe_alternative: safeAlternative,
+    active_layers: normalizeLayers(
+      trace.active_layers ?? trace.activeLayers,
+      layerTrace
     ),
-    safe_alternative:
-      decision === "PRIME_REFUSAL"
-        ? String(
-            trace.safe_alternative ??
-            trace.safeAlternative ??
-            trace.redirect ??
-            "Reframe the request as a consent-preserving, non-coercive action."
-          )
-        : null,
-    active_layers: normalizeLayers(trace.active_layers, layerTrace),
-    archetypal_mode: String(
-      trace.archetypal_mode ??
-      trace.mode ??
-      (decision === "PRIME_REFUSAL" ? "GUARDIAN" : "WEAVER")
-    ).toUpperCase(),
-    first_law_principles: asArray(
-      trace.first_law_principles ??
-      trace.principles ??
-      governance.principles ??
-      (decision === "PRIME_REFUSAL"
-        ? ["NON_COERCION", "SOVEREIGNTY_PRESERVATION"]
-        : ["COHERENCE", "TRUTHFULNESS"])
-    ).map(String),
-    uncertainties: asArray(trace.uncertainties).map(String),
+    archetypal_mode: archetypalMode?.toUpperCase() ?? null,
+    first_law_principles: firstLawPrinciples,
+    uncertainties,
     layer_trace: layerTrace,
     task_result: trace.task_result ?? trace.answer ?? trace.result_text ?? null,
     telemetry: {
@@ -204,31 +268,25 @@ export function normalizeCodetteResponse(payload, metadata = {}) {
         trace.perspective_dispersion
       ),
       stream_count: positiveInteger(
-        telemetrySource.stream_count ?? trace.streamCount,
-        1
+        telemetrySource.stream_count ?? trace.streamCount
       ),
-      minority_position_preserved: Boolean(
-        telemetrySource.minority_position_preserved ??
-        trace.minorityPreserved
+      minority_position_preserved: optionalBoolean(
+        telemetrySource.minority_position_preserved ?? trace.minorityPreserved
       ),
       minority_evidence_ids: minorityEvidenceIds,
       adversarial_resilience: clampUnit(
         telemetrySource.adversarial_resilience ?? trace.adversarialResilience
       ),
-      evidence_trace_complete: Boolean(
+      evidence_trace_complete: optionalBoolean(
         telemetrySource.evidence_trace_complete ?? trace.evidenceTraceComplete
       ),
-      aegis_interventions: asArray(
-        telemetrySource.aegis_interventions ??
-        trace.aegisInterventions ??
-        governance.interventions
-      ).map(String),
+      aegis_interventions: aegisInterventions,
       latency_ms: Math.max(0, Math.round(Number(metadata.latencyMs ?? 0))),
-      strategy_variant: String(metadata.variant ?? trace.strategy_variant ?? "unspecified"),
-      measurement_source: String(
-        telemetrySource.measurement_source ?? metadata.measurementSource ?? "CODETTE_REPORTED"
-      )
+      strategy_variant: strategyVariant,
+      measurement_source: measurementSource
     },
+    missing_fields: missingFields,
+    adapter_supplied_fields: adapterSuppliedFields,
     adapter_status: String(metadata.adapterStatus ?? "CODETTE_RESPONSE")
   };
 }
@@ -319,12 +377,48 @@ function fixtureResponse(trial, variant) {
   };
 }
 
+async function readBoundedResponse(response) {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+    throw new Error("Codette HTTP bridge response exceeded 1 MB");
+  }
+
+  if (!response.body) {
+    return "";
+  }
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    totalBytes += value.byteLength;
+    if (totalBytes > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error("Codette HTTP bridge response exceeded 1 MB");
+    }
+    chunks.push(value);
+  }
+
+  const bounded = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bounded.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bounded);
+}
+
 async function fetchHttp(payload, config) {
   const url = required(config.url ?? process.env.CODETTE_URL, "CODETTE_URL");
   const timeoutMs = positiveInteger(
-    config.timeoutMs ?? process.env.CODETTE_TIMEOUT_MS,
-    DEFAULT_TIMEOUT_MS
-  );
+    config.timeoutMs ?? process.env.CODETTE_TIMEOUT_MS
+  ) ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -341,7 +435,7 @@ async function fetchHttp(payload, config) {
       body: JSON.stringify(payload),
       signal: controller.signal
     });
-    const responseText = await response.text();
+    const responseText = await readBoundedResponse(response);
     if (!response.ok) {
       throw new Error(
         `Codette HTTP bridge returned ${response.status}: ${responseText.slice(0, 500)}`
@@ -370,9 +464,8 @@ async function runCommand(payload, config) {
   }
 
   const timeoutMs = positiveInteger(
-    config.timeoutMs ?? process.env.CODETTE_TIMEOUT_MS,
-    DEFAULT_TIMEOUT_MS
-  );
+    config.timeoutMs ?? process.env.CODETTE_TIMEOUT_MS
+  ) ?? DEFAULT_TIMEOUT_MS;
 
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
