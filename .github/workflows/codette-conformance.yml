@@ -5,6 +5,7 @@ on:
     paths:
       - "trial-chamber/adapters/codette.mjs"
       - "trial-chamber/evaluators/dispersion.mjs"
+      - "trial-chamber/private-reasoning-keys.mjs"
       - "trial-chamber/suites/reasoning-evaluation.json"
       - "trial-chamber/reasoning-runner.mjs"
       - "tests/codette-adapter.test.mjs"
@@ -19,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20.11"
@@ -29,8 +32,10 @@ jobs:
           CODETTE_TRANSPORT: fixture
         run: node trial-chamber/reasoning-runner.mjs
       - name: Upload Witness Ledger
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: codette-reasoning-witness
           path: trial-chamber/output/codette-reasoning-witness.jsonl
           retention-days: 90
+          if-no-files-found: warn
