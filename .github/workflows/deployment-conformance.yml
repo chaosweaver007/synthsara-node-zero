@@ -1,0 +1,56 @@
+name: Node Zero deployment conformance
+
+on:
+  workflow_dispatch:
+    inputs:
+      public_url:
+        description: Public Node Zero deployment URL
+        required: true
+        type: string
+      allow_degraded_gateway:
+        description: Accept a bounded 502/504 Genesis response for diagnostics only
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  validate-deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate repository and build
+        run: |
+          npm test
+          npm run build
+
+      - name: Inspect public deployment
+        env:
+          NODE_ZERO_PUBLIC_URL: ${{ inputs.public_url }}
+          NODE_ZERO_ALLOW_DEGRADED_GATEWAY: ${{ inputs.allow_degraded_gateway }}
+        run: >-
+          node scripts/deployment-conformance.mjs
+          "$NODE_ZERO_PUBLIC_URL"
+          --output deployment-conformance-report.json
+
+      - name: Upload deployment conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-zero-deployment-conformance
+          path: deployment-conformance-report.json
+          retention-days: 90
+          if-no-files-found: warn
