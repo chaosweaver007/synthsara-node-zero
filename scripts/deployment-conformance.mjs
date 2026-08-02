@@ -12,12 +12,18 @@ const ROOT_MARKERS = [
   "Witness Ledger",
 ];
 
-const CSP_DIRECTIVES = [
-  "default-src 'self'",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-];
+const CSP_SOURCE_BOUNDARY = new Map([
+  ["default-src", ["'self'"]],
+  ["script-src", ["'self'"]],
+  ["style-src", ["'self'"]],
+  ["img-src", ["'self'", "data:"]],
+  ["font-src", ["'self'"]],
+  ["connect-src", ["'self'"]],
+  ["object-src", ["'none'"]],
+  ["base-uri", ["'none'"]],
+  ["form-action", ["'self'"]],
+  ["frame-ancestors", ["'none'"]],
+]);
 
 function assertion(condition, message, details = {}) {
   return { ok: Boolean(condition), message, ...details };
@@ -42,16 +48,6 @@ export function normalizeBaseUrl(value) {
 
   url.pathname = "/";
   return url.origin;
-}
-
-async function fetchWithTimeout(fetchFn, url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetchFn(url, { ...options, signal: controller.signal, redirect: "follow" });
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 async function readBodyWithLimit(response, maxBytes) {
@@ -84,10 +80,58 @@ async function readBodyWithLimit(response, maxBytes) {
   return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString("utf8");
 }
 
+async function fetchTextWithTimeout(
+  fetchFn,
+  url,
+  options = {},
+  maxBytes,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchFn(url, {
+      ...options,
+      signal: controller.signal,
+      redirect: options.redirect || "follow",
+    });
+    const text = await readBodyWithLimit(response, maxBytes);
+    return { response, text };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export function parseContentSecurityPolicy(value) {
+  const directives = new Map();
+  if (typeof value !== "string" || value.trim().length === 0 || value.includes(",")) {
+    return directives;
+  }
+
+  for (const segment of value.split(";")) {
+    const tokens = segment.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) continue;
+    const [name, ...sources] = tokens;
+    const normalizedName = name.toLowerCase();
+    if (directives.has(normalizedName)) {
+      return new Map();
+    }
+    directives.set(normalizedName, sources);
+  }
+  return directives;
+}
+
+function exactSourceSet(actual = [], expected = []) {
+  if (actual.length !== expected.length) return false;
+  const actualSet = new Set(actual);
+  return actualSet.size === expected.length && expected.every((source) => actualSet.has(source));
+}
+
 export function inspectRootResponse(response, html) {
   const headers = response.headers;
   const contentType = headers.get("content-type") || "";
   const csp = headers.get("content-security-policy") || "";
+  const parsedCsp = parseContentSecurityPolicy(csp);
   const permissionsPolicy = headers.get("permissions-policy") || "";
 
   return [
@@ -96,9 +140,14 @@ export function inspectRootResponse(response, html) {
     ...ROOT_MARKERS.map((marker) =>
       assertion(html.includes(marker), `Root HTML contains marker: ${marker}`),
     ),
-    ...CSP_DIRECTIVES.map((directive) =>
-      assertion(csp.includes(directive), `CSP contains: ${directive}`, { actual: csp }),
-    ),
+    ...[...CSP_SOURCE_BOUNDARY.entries()].map(([directive, expectedSources]) => {
+      const actualSources = parsedCsp.get(directive);
+      return assertion(
+        exactSourceSet(actualSources, expectedSources),
+        `CSP directive is exact: ${directive} ${expectedSources.join(" ")}`,
+        { actual: actualSources || null, policy: csp },
+      );
+    }),
     assertion(
       (headers.get("x-content-type-options") || "").toLowerCase() === "nosniff",
       "X-Content-Type-Options is nosniff",
@@ -124,10 +173,33 @@ export function inspectRootResponse(response, html) {
   ];
 }
 
-export function inspectGatewayResponse(response, payload, { allowDegradedGateway = false } = {}) {
+function responseOrigin(response) {
+  if (!response?.url) return null;
+  try {
+    return new URL(response.url).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function inspectGatewayResponse(
+  response,
+  payload,
+  { allowDegradedGateway = false, expectedOrigin = null } = {},
+) {
   const headers = response.headers;
   const acceptedStatuses = allowDegradedGateway ? new Set([200, 502, 504]) : new Set([200]);
+  const finalOrigin = responseOrigin(response);
   const checks = [
+    assertion(response.redirected !== true, "Genesis gateway does not follow redirects", {
+      actual: response.redirected,
+      final_url: response.url || null,
+    }),
+    assertion(
+      !expectedOrigin || !finalOrigin || finalOrigin === expectedOrigin,
+      "Genesis gateway response remains on the Node Zero origin",
+      { expected: expectedOrigin, actual: finalOrigin },
+    ),
     assertion(
       acceptedStatuses.has(response.status),
       allowDegradedGateway
@@ -201,16 +273,25 @@ export async function runDeploymentConformance({
   }
 
   const origin = normalizeBaseUrl(baseUrl);
-  const rootResponse = await fetchWithTimeout(fetchFn, `${origin}/`, {
-    headers: { Accept: "text/html" },
-  }, timeoutMs);
-  const html = await readBodyWithLimit(rootResponse, MAX_ROOT_BYTES);
+  const { response: rootResponse, text: html } = await fetchTextWithTimeout(
+    fetchFn,
+    `${origin}/`,
+    { headers: { Accept: "text/html" } },
+    MAX_ROOT_BYTES,
+    timeoutMs,
+  );
   const rootChecks = inspectRootResponse(rootResponse, html);
 
-  const gatewayResponse = await fetchWithTimeout(fetchFn, `${origin}/api/genesis`, {
-    headers: { Accept: "application/json" },
-  }, timeoutMs);
-  const gatewayText = await readBodyWithLimit(gatewayResponse, MAX_GATEWAY_BYTES);
+  const { response: gatewayResponse, text: gatewayText } = await fetchTextWithTimeout(
+    fetchFn,
+    `${origin}/api/genesis`,
+    {
+      headers: { Accept: "application/json" },
+      redirect: "manual",
+    },
+    MAX_GATEWAY_BYTES,
+    timeoutMs,
+  );
   let gatewayPayload = {};
   try {
     gatewayPayload = gatewayText ? JSON.parse(gatewayText) : {};
@@ -219,6 +300,7 @@ export async function runDeploymentConformance({
   }
   const gatewayChecks = inspectGatewayResponse(gatewayResponse, gatewayPayload, {
     allowDegradedGateway,
+    expectedOrigin: origin,
   });
 
   const checks = [...rootChecks, ...gatewayChecks];
