@@ -14,8 +14,13 @@ const securityHeaders = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
 };
 
-function response(body, { status = 200, headers = {} } = {}) {
-  return new Response(body, { status, headers });
+function response(body, { status = 200, headers = {}, url = null, redirected = false } = {}) {
+  const result = new Response(body, { status, headers });
+  if (url) {
+    Object.defineProperty(result, "url", { value: url });
+  }
+  Object.defineProperty(result, "redirected", { value: redirected });
+  return result;
 }
 
 function createFetch({ rootHeaders = {}, gatewayStatus = 200 } = {}) {
@@ -33,6 +38,7 @@ function createFetch({ rootHeaders = {}, gatewayStatus = 200 } = {}) {
         : { error: "Genesis is temporarily unavailable through the private gateway." };
       return response(JSON.stringify(payload), {
         status: gatewayStatus,
+        url,
         headers: {
           "content-type": "application/json; charset=utf-8",
           "cache-control": "no-store",
@@ -45,6 +51,7 @@ function createFetch({ rootHeaders = {}, gatewayStatus = 200 } = {}) {
     return response(
       "<title>Synthsara Node Zero</title><h2>Sarah Mirror</h2><h2>Consent Vault</h2><h2>Witness Ledger</h2>",
       {
+        url,
         headers: {
           "content-type": "text/html; charset=utf-8",
           ...securityHeaders,
@@ -71,6 +78,7 @@ test("passes a conformant deployment and live Genesis gateway", async () => {
 
   assert.equal(report.summary.conformant, true);
   assert.equal(report.summary.failed, 0);
+  assert.deepEqual(report.certification, { eligible: true, status: "CERTIFIED" });
 });
 
 test("fails closed when a required CSP directive is missing", async () => {
@@ -112,6 +120,7 @@ test("rejects gateway redirects and requests manual redirect handling", async ()
       gatewayRedirectMode = options.redirect;
       return response("", {
         status: 302,
+        url,
         headers: {
           location: "https://gateway.example/status",
           "content-type": "application/json",
@@ -133,6 +142,44 @@ test("rejects gateway redirects and requests manual redirect handling", async ()
   assert.equal(report.summary.conformant, false);
   assert.ok(report.checks.some((check) =>
     !check.ok && check.message === "Genesis gateway returns HTTP 200",
+  ));
+});
+
+test("rejects a valid-looking gateway response from another origin", async () => {
+  const fetchFn = async (url, options = {}) => {
+    if (!url.endsWith("/api/genesis")) {
+      return createFetch()(url, options);
+    }
+    return response(JSON.stringify({
+      status: "ready",
+      gateway: {
+        node: "synthsara-node-zero",
+        route: "same-origin-private-proxy",
+        upstream_status: 200,
+      },
+    }), {
+      url: "https://gateway.example/status",
+      redirected: true,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+      },
+    });
+  };
+
+  const report = await runDeploymentConformance({
+    baseUrl: "https://node-zero.example",
+    fetchFn,
+  });
+
+  assert.equal(report.summary.conformant, false);
+  assert.ok(report.checks.some((check) =>
+    !check.ok && check.message.includes("remains on the Node Zero origin"),
+  ));
+  assert.ok(report.checks.some((check) =>
+    !check.ok && check.message.includes("does not follow redirects"),
   ));
 });
 
@@ -158,6 +205,7 @@ test("keeps the timeout active while consuming response bodies", async () => {
     });
 
     return response(stream, {
+      url,
       headers: {
         "content-type": "text/html; charset=utf-8",
         ...securityHeaders,
@@ -188,4 +236,8 @@ test("allows an explicitly degraded gateway only in diagnostic mode", async () =
     allowDegradedGateway: true,
   });
   assert.equal(diagnosticReport.summary.conformant, true);
+  assert.deepEqual(diagnosticReport.certification, {
+    eligible: false,
+    status: "DIAGNOSTIC_ONLY",
+  });
 });
