@@ -196,7 +196,7 @@ export function inspectGatewayResponse(
       final_url: response.url || null,
     }),
     assertion(
-      !expectedOrigin || !finalOrigin || finalOrigin === expectedOrigin,
+      !expectedOrigin || finalOrigin === expectedOrigin,
       "Genesis gateway response remains on the Node Zero origin",
       { expected: expectedOrigin, actual: finalOrigin },
     ),
@@ -304,12 +304,22 @@ export async function runDeploymentConformance({
   });
 
   const checks = [...rootChecks, ...gatewayChecks];
+  const summary = summarize(checks);
+  const certification = {
+    eligible: !allowDegradedGateway && summary.conformant,
+    status: allowDegradedGateway
+      ? "DIAGNOSTIC_ONLY"
+      : summary.conformant
+        ? "CERTIFIED"
+        : "FAILED",
+  };
   return {
     schema: "synthsara.node-zero.deployment-conformance.v1",
     checked_at: new Date().toISOString(),
     deployment_url: origin,
     allow_degraded_gateway: allowDegradedGateway,
-    summary: summarize(checks),
+    summary,
+    certification,
     checks,
   };
 }
@@ -345,7 +355,7 @@ async function main() {
   if (options.output) {
     await writeFile(options.output, serialized, "utf8");
   }
-  if (!report.summary.conformant) {
+  if (!report.certification.eligible) {
     process.exitCode = 1;
   }
 }
