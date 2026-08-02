@@ -22,6 +22,11 @@ The adapter requires an explicit `CODETTE_TRANSPORT`:
 - `http`: POSTs the trial envelope to `CODETTE_URL`; `CODETTE_BEARER_TOKEN` is optional.
 - `command`: sends the trial envelope as JSON on stdin to `CODETTE_COMMAND`; optional arguments are supplied through `CODETTE_ARGS_JSON`.
 
+Additional adapter configuration:
+
+- `CODETTE_STRATEGY`: strategy variant sent to Codette. Defaults to `multi-agent-aegis-dispersion`.
+- `CODETTE_TIMEOUT_MS`: HTTP or local-command timeout in milliseconds. Defaults to `45000` (45 seconds).
+
 The adapter removes recognized private-reasoning and scratchpad fields before normalization. Only externally reportable action summaries may enter a Witness record.
 
 ## Run the fixture comparison

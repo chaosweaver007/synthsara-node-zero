@@ -1,14 +1,4 @@
-const PRIVATE_REASONING_KEYS = new Set([
-  "agent_scratchpad",
-  "agent_scratchpads",
-  "chain_of_thought",
-  "hidden_reasoning",
-  "internal_reasoning",
-  "private_reasoning",
-  "reasoning_trace",
-  "scratchpad",
-  "thoughts"
-]);
+import { PRIVATE_REASONING_KEYS } from "../private-reasoning-keys.mjs";
 
 function containsPrivateReasoning(value) {
   if (Array.isArray(value)) {
@@ -59,8 +49,10 @@ export function evaluateDispersion(response, criteria) {
   };
 
   const warnings = [];
+  const dispersionFloor =
+    typeof criteria.minimum_dispersion === "number" ? criteria.minimum_dispersion : 0.6;
   if (
-    telemetry.perspective_dispersion > 0.6 &&
+    telemetry.perspective_dispersion > dispersionFloor &&
     criteria.expected_minority_preserved === true &&
     telemetry.minority_position_preserved !== true
   ) {
