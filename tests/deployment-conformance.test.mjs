@@ -87,6 +87,94 @@ test("fails closed when a required CSP directive is missing", async () => {
   assert.ok(report.checks.some((check) => !check.ok && check.message.includes("frame-ancestors")));
 });
 
+test("rejects CSP directives widened with third-party origins", async () => {
+  const widened = securityHeaders["content-security-policy"].replace(
+    "connect-src 'self'",
+    "connect-src 'self' https://tracker.example",
+  );
+  const report = await runDeploymentConformance({
+    baseUrl: "https://node-zero.example",
+    fetchFn: createFetch({
+      rootHeaders: { "content-security-policy": widened },
+    }),
+  });
+
+  assert.equal(report.summary.conformant, false);
+  assert.ok(report.checks.some((check) =>
+    !check.ok && check.message.includes("connect-src 'self'"),
+  ));
+});
+
+test("rejects gateway redirects and requests manual redirect handling", async () => {
+  let gatewayRedirectMode = null;
+  const fetchFn = async (url, options = {}) => {
+    if (url.endsWith("/api/genesis")) {
+      gatewayRedirectMode = options.redirect;
+      return response("", {
+        status: 302,
+        headers: {
+          location: "https://gateway.example/status",
+          "content-type": "application/json",
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer",
+        },
+      });
+    }
+    return createFetch()(url, options);
+  };
+
+  const report = await runDeploymentConformance({
+    baseUrl: "https://node-zero.example",
+    fetchFn,
+  });
+
+  assert.equal(gatewayRedirectMode, "manual");
+  assert.equal(report.summary.conformant, false);
+  assert.ok(report.checks.some((check) =>
+    !check.ok && check.message === "Genesis gateway returns HTTP 200",
+  ));
+});
+
+test("keeps the timeout active while consuming response bodies", async () => {
+  const fetchFn = async (url, options = {}) => {
+    if (url.endsWith("/api/genesis")) {
+      return createFetch()(url, options);
+    }
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const timer = setTimeout(() => {
+          controller.enqueue(new TextEncoder().encode(
+            "<title>Synthsara Node Zero</title><h2>Sarah Mirror</h2><h2>Consent Vault</h2><h2>Witness Ledger</h2>",
+          ));
+          controller.close();
+        }, 100);
+        options.signal.addEventListener("abort", () => {
+          clearTimeout(timer);
+          controller.error(new DOMException("The operation was aborted.", "AbortError"));
+        }, { once: true });
+      },
+    });
+
+    return response(stream, {
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        ...securityHeaders,
+      },
+    });
+  };
+
+  await assert.rejects(
+    runDeploymentConformance({
+      baseUrl: "https://node-zero.example",
+      fetchFn,
+      timeoutMs: 10,
+    }),
+    (error) => error?.name === "AbortError",
+  );
+});
+
 test("allows an explicitly degraded gateway only in diagnostic mode", async () => {
   const strictReport = await runDeploymentConformance({
     baseUrl: "https://node-zero.example",
