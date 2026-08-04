@@ -31,6 +31,14 @@ Node Zero is intentionally small enough to audit. The browser interface remains 
 - **UDS:** an inspectable eight-pillar ethics gate.
 - **Trial Chamber:** repeatable reference and live-gateway conformance infrastructure.
 
+## Research reference
+
+The Codette-specific conformance and reasoning-matrix work in `trial-chamber/` cites the following primary publication:
+
+> Harrison, J. (2026). Codette: a multi-perspective cognitive architecture with memory and meta-cognitive strategy evolution. *Scientific Reports*. https://doi.org/10.1038/s41598-026-64449-0
+
+The paper is cited as the external source for Codette's described architecture. This citation does not imply that the author, journal, or publisher endorses Node Zero or its conformance claims.
+
 ## Genesis connection
 
 ```text
