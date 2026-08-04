@@ -70,6 +70,20 @@ test("rejects non-HTTPS public deployments", () => {
   assert.throws(() => normalizeBaseUrl("http://node-zero.example"), /requires HTTPS/);
 });
 
+test("rejects deployment URLs with embedded credentials", () => {
+  assert.throws(
+    () => normalizeBaseUrl("https://user:pass@node-zero.example"),
+    /embedded credentials/,
+  );
+});
+
+test("rejects deployment URLs with query parameters or fragments", () => {
+  assert.throws(
+    () => normalizeBaseUrl("https://node-zero.example/?x=1"),
+    /query parameters or fragments/,
+  );
+});
+
 test("passes a conformant deployment and live Genesis gateway", async () => {
   const report = await runDeploymentConformance({
     baseUrl: "https://node-zero.example",
