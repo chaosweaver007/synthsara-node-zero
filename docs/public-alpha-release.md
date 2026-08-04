@@ -47,16 +47,27 @@ The workflow uploads `deployment-conformance-report.json` as a 90-day audit arti
 
 ## 3. Perform the mobile encounter test
 
-Using a clean mobile browser session:
+Use a clean mobile browser session and record the evidence below.
 
-- open the final public URL;
-- confirm the navigation opens and all chambers remain reachable;
-- verify every optional consent scope begins disabled;
-- use the global revocation control;
-- confirm the Sarah Mirror reports the live gateway or an explicit local fallback;
-- verify Mirror text and RTME intention text do not appear in the local Witness Layer;
-- export the Witness Layer and inspect the JSON;
-- confirm no third-party fonts, analytics, or browser assets are requested.
+- **Tester:**
+- **Date (UTC):**
+- **Device and OS:**
+- **Browser and version:**
+- **Final public URL:**
+- **Evidence reference:** workflow run, screenshots, recording, or review artifact
+
+Verification checklist:
+
+- [ ] Open the final public URL.
+- [ ] Confirm the navigation opens and all chambers remain reachable.
+- [ ] Verify every optional consent scope begins disabled.
+- [ ] Use the global revocation control.
+- [ ] Confirm the Sarah Mirror reports the live gateway or an explicit local fallback.
+- [ ] Verify Mirror text and RTME intention text do not appear in the local Witness Layer.
+- [ ] Export the Witness Layer and inspect the JSON.
+- [ ] Confirm no third-party fonts, analytics, or browser assets are requested.
+
+The mobile encounter test is complete only when every checkbox is marked and all evidence fields are populated.
 
 ## 4. Promote the URL
 
