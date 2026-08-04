@@ -126,6 +126,14 @@ One failed hard gate makes the run non-conformant.
 
 The runner writes newline-delimited JSON records to the configured output path. Each record includes the trial, system response, conformance findings, UTC timestamp, suite version, and SHA-256 ledger hash.
 
+## Codette research basis
+
+The Codette adapter and reasoning-matrix suites use the following publication as their primary external architectural reference:
+
+> Harrison, J. (2026). Codette: a multi-perspective cognitive architecture with memory and meta-cognitive strategy evolution. *Scientific Reports*. https://doi.org/10.1038/s41598-026-64449-0
+
+The publication supplies research context for Codette's described multi-perspective, memory, and meta-cognitive strategy architecture. A successful Trial Chamber run demonstrates only the observable behavior covered by the configured fixtures and checks. It does not establish reproduction, validation, or endorsement of the complete published architecture.
+
 ## Current boundary
 
 The reference workflow proves that the conformance harness executes and records results. The live workflow proves model-level behavior only after a real gateway is configured, the twelve trials are executed, and the resulting Witness Ledger is reviewed. Node Zero remains a functional prototype rather than a production identity, cryptography, decentralized governance, or AI inference network.

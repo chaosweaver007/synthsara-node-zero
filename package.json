@@ -8,6 +8,7 @@
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "preview": "node scripts/serve.mjs dist",
+    "conformance:deployment": "node scripts/deployment-conformance.mjs",
     "check": "node scripts/check.mjs",
     "test": "npm run check && node --test tests/*.test.mjs"
   },
