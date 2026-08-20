@@ -402,7 +402,7 @@ function presentSelector(selector) {
         correction_text: correctionText,
         panel,
       });
-    }, { once: true });
+    });
 
     panel.append(correctionForm);
     thread?.append(panel);
