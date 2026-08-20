@@ -6,6 +6,7 @@ document.head.append(gatewayStyles);
 const GATEWAY_PATH = "/api/genesis";
 const STORAGE_KEY = "synthsara-node-zero-v2";
 const MAX_LEDGER_EVENTS = 100;
+const DEFAULT_CORRECTION_LIMIT = 1000;
 
 function getElement(id) {
   return document.getElementById(id);
@@ -111,6 +112,27 @@ function recordPrivateEvent(type, detail) {
   }
 }
 
+function ensureTraceField(id, label) {
+  const trace = getElement("mirror-trace");
+  if (!trace) {
+    return null;
+  }
+
+  let value = getElement(id);
+  if (value) {
+    return value;
+  }
+
+  const wrapper = document.createElement("span");
+  const heading = document.createElement("b");
+  heading.textContent = label;
+  value = document.createElement("span");
+  value.id = id;
+  wrapper.append(heading, document.createTextNode(" "), value);
+  trace.append(wrapper);
+  return value;
+}
+
 function updateTrace(payload) {
   const trace = getElement("mirror-trace");
   if (!trace) {
@@ -120,11 +142,27 @@ function updateTrace(payload) {
   const receipt = payload?.witness_receipt || {};
   const gate = payload?.gate_zero || {};
   const reflection = payload?.reflection || {};
+  const selection = payload?.codex_selection || {};
+  const selector = payload?.selector || {};
 
   getElement("trace-id").textContent = receipt.trace_id || "Not issued";
   getElement("trace-gate").textContent = gate.decision || receipt.gate_zero || "unknown";
   getElement("trace-memory").textContent = receipt.memory_write || "none";
   getElement("trace-reflection").textContent = receipt.reflection || (reflection.required_revision ? "review" : "pass");
+
+  const codexValue = ensureTraceField("trace-codex", "Codex");
+  const selectorValue = ensureTraceField("trace-selector", "Selector");
+  const registryValue = ensureTraceField("trace-registry", "Registry");
+  if (codexValue) {
+    codexValue.textContent = selection.selected_node || receipt.selected_node || "none";
+  }
+  if (selectorValue) {
+    selectorValue.textContent = selection.challenge_status || receipt.challenge_status || "not used";
+  }
+  if (registryValue) {
+    registryValue.textContent = selector.registry_version || selection.registry_version || receipt.registry_version || "unknown";
+  }
+
   trace.hidden = false;
 }
 
@@ -161,6 +199,19 @@ async function readJson(response) {
   return response.json();
 }
 
+async function postGateway(body) {
+  const response = await fetch(GATEWAY_PATH, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify(body),
+  });
+  return { response, payload: await readJson(response) };
+}
+
 async function checkGateway() {
   try {
     const response = await fetch(GATEWAY_PATH, {
@@ -176,7 +227,9 @@ async function checkGateway() {
     setGatewayState(
       "connected",
       "Genesis connected",
-      "Private shadow mode · no memory writes · no tools",
+      payload?.sonic_codex?.selector_mode === "opt-in-explicit"
+        ? "Private shadow mode · sovereign Selector online · no memory writes"
+        : "Private shadow mode · no memory writes · no tools",
     );
   } catch {
     setGatewayState(
@@ -185,6 +238,273 @@ async function checkGateway() {
       "Genesis proxy is unavailable; private local reflection remains available",
     );
   }
+}
+
+function makeText(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) {
+    element.className = className;
+  }
+  element.textContent = text;
+  return element;
+}
+
+function formatConfidence(value) {
+  return Number.isFinite(value) ? `${Math.round(value * 100)}% match score` : "unscored match";
+}
+
+function presentSelector(selector) {
+  return new Promise((resolve) => {
+    const thread = getElement("mirror-thread");
+    const panel = document.createElement("section");
+    panel.className = "selector-panel";
+    panel.setAttribute("role", "region");
+    panel.setAttribute("aria-label", "Sonic Codex Selector");
+
+    panel.append(
+      makeText("h3", "selector-title", "Choose the lens, reject it, or correct it"),
+      makeText(
+        "p",
+        "selector-copy",
+        "Genesis is proposing interpretive lenses only. Nothing is selected automatically, and the match score is not a truth score.",
+      ),
+    );
+
+    const candidates = Array.isArray(selector?.candidates) ? selector.candidates : [];
+    const candidateList = document.createElement("div");
+    candidateList.className = "selector-candidates";
+
+    for (const candidate of candidates) {
+      const card = document.createElement("article");
+      card.className = "selector-candidate";
+      const heading = makeText("h4", "", `${candidate.node_id} · ${candidate.title}`);
+      const meta = makeText(
+        "p",
+        "selector-meta",
+        `${candidate.archetype || "Interpretive node"} · phase ${candidate.harmonic_phase || "?"} · ${formatConfidence(candidate.confidence)}`,
+      );
+      const themes = Array.isArray(candidate.matched_themes) ? candidate.matched_themes : [];
+      const reasons = Array.isArray(candidate.reason_codes) ? candidate.reason_codes : [];
+      const themeText = makeText(
+        "p",
+        "selector-detail",
+        themes.length ? `Matched: ${themes.join(" · ")}` : "Matched through the pinned node vocabulary.",
+      );
+      const reasonText = makeText(
+        "p",
+        "selector-reasons",
+        reasons.length ? reasons.join(" · ") : "No diagnostic reason code supplied.",
+      );
+      const useButton = makeText("button", "button button-secondary selector-use", "Use this lens");
+      useButton.type = "button";
+      useButton.addEventListener("click", () => {
+        resolve({
+          challenge_status: "CONFIRMED",
+          selected_node_id: candidate.node_id,
+          correction_text: null,
+          panel,
+        });
+      }, { once: true });
+      card.append(heading, meta, themeText, reasonText, useButton);
+      candidateList.append(card);
+    }
+
+    if (candidates.length === 0) {
+      candidateList.append(
+        makeText(
+          "p",
+          "selector-empty",
+          "No close Codex lens was proposed. You can continue without one or supply your own framing.",
+        ),
+      );
+    }
+    panel.append(candidateList);
+
+    const actionRow = document.createElement("div");
+    actionRow.className = "selector-actions";
+
+    const rejectButton = makeText("button", "button button-secondary", "None of these fit");
+    rejectButton.type = "button";
+    rejectButton.addEventListener("click", () => {
+      resolve({
+        challenge_status: "REJECTED",
+        selected_node_id: null,
+        correction_text: null,
+        panel,
+      });
+    }, { once: true });
+
+    const correctButton = makeText("button", "button button-secondary", "Correct the interpretation");
+    correctButton.type = "button";
+    actionRow.append(rejectButton, correctButton);
+    panel.append(actionRow);
+
+    const correctionForm = document.createElement("form");
+    correctionForm.className = "selector-correction";
+    correctionForm.hidden = true;
+
+    const correctionLabel = makeText("label", "selector-label", "Optional alternate Codex node");
+    const nodeSelect = document.createElement("select");
+    nodeSelect.className = "selector-select";
+    nodeSelect.setAttribute("aria-label", "Alternate Sonic Codex node");
+    const blankOption = document.createElement("option");
+    blankOption.value = "";
+    blankOption.textContent = "No node · use my words only";
+    nodeSelect.append(blankOption);
+
+    const availableNodes = Array.isArray(selector?.selection_contract?.available_nodes)
+      ? selector.selection_contract.available_nodes
+      : [];
+    for (const node of availableNodes) {
+      const option = document.createElement("option");
+      option.value = node.node_id;
+      option.textContent = `${node.node_id} · ${node.title}`;
+      nodeSelect.append(option);
+    }
+
+    const textLabel = makeText("label", "selector-label", "My correction (optional if you choose another node)");
+    const correctionInput = document.createElement("textarea");
+    correctionInput.className = "selector-correction-input";
+    correctionInput.maxLength = Number(selector?.selection_contract?.correction_max_length) || DEFAULT_CORRECTION_LIMIT;
+    correctionInput.placeholder = "My meaning is…";
+
+    const correctionError = makeText("p", "selector-error", "");
+    correctionError.setAttribute("role", "alert");
+
+    const correctionSubmit = makeText("button", "button button-primary", "Use my correction");
+    correctionSubmit.type = "submit";
+    correctionForm.append(
+      correctionLabel,
+      nodeSelect,
+      textLabel,
+      correctionInput,
+      correctionError,
+      correctionSubmit,
+    );
+
+    correctButton.addEventListener("click", () => {
+      correctionForm.hidden = false;
+      correctionInput.focus();
+      scrollMirrorToLatest();
+    });
+
+    correctionForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const selectedNode = nodeSelect.value || null;
+      const correctionText = correctionInput.value.trim() || null;
+      if (!selectedNode && !correctionText) {
+        correctionError.textContent = "Choose another node, write your correction, or use ‘None of these fit’.";
+        return;
+      }
+      resolve({
+        challenge_status: "CORRECTED",
+        selected_node_id: selectedNode,
+        correction_text: correctionText,
+        panel,
+      });
+    }, { once: true });
+
+    panel.append(correctionForm);
+    thread?.append(panel);
+    scrollMirrorToLatest();
+  });
+}
+
+async function runSelectorFlow(text, pending) {
+  const proposal = await postGateway({
+    operation: "selector.propose",
+    message: text,
+    persona: "sarah",
+  });
+
+  if (proposal.response.status === 403 || proposal.payload?.gate_zero?.decision === "reject") {
+    pending.textContent = proposal.payload?.response || "This request could not pass Gate 0.";
+    pending.classList.remove("bubble-pending");
+    updateTrace(proposal.payload);
+    recordPrivateEvent(
+      "GENESIS_PRIME_REFUSAL",
+      "Genesis Gate 0 refused a private request before Codex recognition; message content was not stored locally.",
+    );
+    return;
+  }
+
+  if (!proposal.response.ok || !proposal.payload?.selector) {
+    throw new Error(proposal.payload?.error || "Genesis returned no Selector proposal.");
+  }
+
+  pending.textContent = "Genesis found possible interpretive lenses. You decide whether any of them belong in the response.";
+  pending.classList.remove("bubble-pending");
+  updateTrace(proposal.payload);
+  recordPrivateEvent(
+    "SONIC_SELECTOR_PROPOSED",
+    "Interpretive candidates were offered without persona generation; private message content was not stored locally.",
+  );
+
+  const choice = await presentSelector(proposal.payload.selector);
+  choice.panel.remove();
+  pending.textContent = "Genesis is rechecking Gate 0 and your explicit Selector choice…";
+  pending.classList.add("bubble-pending");
+  scrollMirrorToLatest();
+
+  const confirmation = await postGateway({
+    operation: "selector.confirm",
+    message: text,
+    persona: "sarah",
+    challenge_status: choice.challenge_status,
+    selected_node_id: choice.selected_node_id,
+    correction_text: choice.correction_text,
+  });
+
+  if (confirmation.response.status === 400) {
+    pending.textContent = `${confirmation.payload?.error || "The Selector choice could not be confirmed."} Please submit the message again to receive a fresh proposal.`;
+    pending.classList.remove("bubble-pending");
+    updateTrace(confirmation.payload);
+    recordPrivateEvent(
+      "SONIC_SELECTOR_RESELECT_REQUIRED",
+      "A Selector confirmation was invalid or stale; private correction content was not stored locally.",
+    );
+    return;
+  }
+
+  if (confirmation.response.status === 403 || confirmation.payload?.gate_zero?.decision === "reject") {
+    pending.textContent = confirmation.payload?.response || "The request no longer passes Gate 0.";
+    pending.classList.remove("bubble-pending");
+    updateTrace(confirmation.payload);
+    recordPrivateEvent(
+      "GENESIS_PRIME_REFUSAL",
+      "Genesis Gate 0 refused the recomputed request during Selector confirmation; private content was not stored locally.",
+    );
+    return;
+  }
+
+  if (typeof confirmation.payload?.response !== "string" || !confirmation.payload.response.trim()) {
+    throw new Error(confirmation.payload?.error || "Genesis returned no reflection after selection.");
+  }
+
+  pending.textContent = confirmation.payload.response;
+  pending.classList.remove("bubble-pending");
+  updateTrace(confirmation.payload);
+  setGatewayState(
+    "connected",
+    "Genesis connected",
+    confirmation.response.ok
+      ? "Private Selector reflection completed through Gate 0"
+      : "UDS reflection returned a protected boundary",
+  );
+
+  const eventByStatus = {
+    CONFIRMED: "SONIC_SELECTOR_CONFIRMED",
+    REJECTED: "SONIC_SELECTOR_REJECTED",
+    CORRECTED: "SONIC_SELECTOR_CORRECTED",
+  };
+  recordPrivateEvent(
+    eventByStatus[choice.challenge_status] || "GENESIS_MIRROR_REFLECTION",
+    choice.challenge_status === "CORRECTED"
+      ? "The user supplied a different interpretive selection; private correction content was not stored locally."
+      : choice.challenge_status === "REJECTED"
+        ? "All proposed interpretive lenses were declined; private message content was not stored locally."
+        : "A proposed interpretive lens was explicitly selected; private message content was not stored locally.",
+  );
 }
 
 async function handleMirrorSubmit(event) {
@@ -201,7 +521,7 @@ async function handleMirrorSubmit(event) {
   }
 
   createBubble(text, "user");
-  const pending = createBubble("Genesis is applying Gate 0 and the UDS reflection…", "mirror", "bubble-pending");
+  const pending = createBubble("Genesis is applying Gate 0 before proposing any interpretive lens…", "mirror", "bubble-pending");
   input.value = "";
   input.disabled = true;
   submitButton.disabled = true;
@@ -209,39 +529,7 @@ async function handleMirrorSubmit(event) {
   scrollMirrorToLatest();
 
   try {
-    const response = await fetch(GATEWAY_PATH, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-      body: JSON.stringify({ message: text, persona: "sarah" }),
-    });
-    const payload = await readJson(response);
-
-    if (typeof payload?.response !== "string" || !payload.response.trim()) {
-      throw new Error(payload?.error || "Genesis returned no reflection.");
-    }
-
-    pending.textContent = payload.response;
-    pending.classList.remove("bubble-pending");
-    updateTrace(payload);
-    setGatewayState(
-      "connected",
-      "Genesis connected",
-      response.ok
-        ? "Private reflection completed through Gate 0"
-        : "Gate 0 returned a protected refusal",
-    );
-
-    const refused = payload?.gate_zero?.decision === "reject" || response.status === 403;
-    recordPrivateEvent(
-      refused ? "GENESIS_PRIME_REFUSAL" : "GENESIS_MIRROR_REFLECTION",
-      refused
-        ? "Genesis Gate 0 refused a private request; message content was not stored locally."
-        : "A private reflection was processed through Genesis; message content was not stored locally.",
-    );
+    await runSelectorFlow(text, pending);
   } catch {
     pending.textContent = `${localMirrorReply(text)} Local fallback was used because Genesis could not be reached.`;
     pending.classList.remove("bubble-pending");
