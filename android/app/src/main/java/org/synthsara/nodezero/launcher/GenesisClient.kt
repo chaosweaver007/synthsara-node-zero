@@ -13,7 +13,6 @@ internal data class GenesisResult(
 )
 
 internal object GenesisClient {
-    private const val CHAT_ENDPOINT = "https://genesis-seven-bice.vercel.app/api/o-series/chat"
     private const val MAX_MESSAGE_LENGTH = 2000
     private const val TIMEOUT_MS = 12_000
 
@@ -22,6 +21,11 @@ internal object GenesisClient {
         require(cleanMessage.isNotEmpty()) { "Message cannot be empty." }
         require(cleanMessage.length <= MAX_MESSAGE_LENGTH) {
             "Message must be $MAX_MESSAGE_LENGTH characters or fewer."
+        }
+
+        val endpoint = BuildConfig.SARAH_GATEWAY_URL.trim()
+        require(endpoint.startsWith("https://")) {
+            "SynthSara mobile gateway must use HTTPS."
         }
 
         val envelope = JSONObject()
@@ -33,7 +37,7 @@ internal object GenesisClient {
             .put("collective_learning", false)
             .put("pipeline_mode", "shadow")
 
-        val connection = (URL(CHAT_ENDPOINT).openConnection() as HttpURLConnection).apply {
+        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = TIMEOUT_MS
             readTimeout = TIMEOUT_MS
