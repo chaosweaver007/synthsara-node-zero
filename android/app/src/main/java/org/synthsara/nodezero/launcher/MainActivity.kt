@@ -146,8 +146,9 @@ class MainActivity : Activity() {
         column.addView(askButton)
 
         column.addView(sectionTitle("Today’s workspace"))
+        val projectCount = localStore.projects().size
         column.addView(bodyText(
-            "${localStore.projects().size} local project${if (localStore.projects().size == 1) "" else "s"}. Project names stay on this device.",
+            "$projectCount local project${if (projectCount == 1) "" else "s"}. Project names stay on this device.",
         ))
 
         val shortcutRow = LinearLayout(this).apply {
@@ -239,7 +240,7 @@ class MainActivity : Activity() {
 
         val input = EditText(this).apply {
             hint = "New project"
-            singleLine = true
+            isSingleLine = true
         }
         column.addView(input)
         column.addView(actionButton("Add project") {
@@ -295,7 +296,7 @@ class MainActivity : Activity() {
                     val button = Button(this).apply {
                         text = app.label
                         textSize = 11f
-                        isAllCaps = false
+                        setAllCaps(false)
                         gravity = Gravity.CENTER
                         minHeight = dp(88)
                         setPadding(dp(6), dp(8), dp(6), dp(8))
@@ -359,32 +360,21 @@ class MainActivity : Activity() {
 
     private fun setPage(view: View) {
         content.removeAllViews()
-        content.addView(view, FrameLayout.LayoutParams(
+        val page = if (view.tag == SCROLLABLE_PAGE_TAG) {
+            ScrollView(this).apply { addView(view) }
+        } else {
+            view
+        }
+        content.addView(page, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT,
         ))
     }
 
-    private fun pageColumn(): LinearLayout {
-        val column = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(16), 0, dp(24))
-        }
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(ScrollView(this@MainActivity).apply {
-                addView(column)
-            }, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f,
-            ))
-            tag = column
-        }.let { wrapper ->
-            // Return the inner column while remembering its scroll wrapper for setPage.
-            column.setTag(PAGE_WRAPPER_TAG, wrapper)
-            column
-        }
+    private fun pageColumn(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(0, dp(16), 0, dp(24))
+        tag = SCROLLABLE_PAGE_TAG
     }
 
     private fun sectionTitle(value: String) = TextView(this).apply {
@@ -405,13 +395,13 @@ class MainActivity : Activity() {
     private fun navButton(label: String, action: () -> Unit) = Button(this).apply {
         text = label
         textSize = 13f
-        isAllCaps = false
+        setAllCaps(false)
         setOnClickListener { action() }
     }
 
     private fun actionButton(label: String, action: () -> Unit) = Button(this).apply {
         text = label
-        isAllCaps = false
+        setAllCaps(false)
         setOnClickListener { action() }
     }
 
@@ -428,6 +418,6 @@ class MainActivity : Activity() {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object {
-        private const val PAGE_WRAPPER_TAG = 0x53594E
+        private const val SCROLLABLE_PAGE_TAG = "synthsara-scrollable-page"
     }
 }
