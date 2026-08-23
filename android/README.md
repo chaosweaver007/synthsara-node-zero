@@ -9,11 +9,12 @@ This directory is the first native Android shell for SynthSara. It is intentiona
 - Provides Home, Sarah, Projects, and Apps surfaces.
 - Keeps project names in app-private `SharedPreferences` on the device.
 - Keeps Sarah chat history only in process memory; the launcher does not persist the transcript.
-- Sends Sarah requests to the existing Genesis O-Series Gate 0 endpoint using a forced privacy envelope:
+- Sends Sarah requests through a configurable HTTPS gateway using a forced privacy envelope:
   - `persona = sarah`
   - `consent_level = private`
   - `collective_learning = false`
   - `pipeline_mode = shadow`
+- Defaults the v0.1 gateway to the existing Genesis O-Series Gate 0 endpoint.
 - Requests only the Android `INTERNET` permission in v0.1. It does not request contacts, calendar, notifications, files, microphone, location, SMS, call logs, accessibility, device admin, or background surveillance capabilities.
 
 ## Existing architecture reused
@@ -25,9 +26,10 @@ Android device
   -> SynthSara Launcher (native HOME shell)
       -> local projects + installed-app launcher
       -> ephemeral Sarah session
-          -> Genesis O-Series Gate 0
-              -> constitutional context + UDS reflection
-              -> metadata-only Witness Receipt
+          -> configured HTTPS mobile gateway
+              -> Genesis O-Series Gate 0
+                  -> constitutional context + UDS reflection
+                  -> metadata-only Witness Receipt
 ```
 
 Node Zero's browser proof remains intact. Genesis remains the constitutional runtime. The launcher owns only native device UX and explicit local state until additional scopes are deliberately added.
@@ -42,6 +44,18 @@ Node Zero's browser proof remains intact. Genesis remains the constitutional run
 6. To leave the experiment, change the default Home app back to the previous launcher.
 
 This project does not replace, flash, root, or modify Android itself.
+
+The GitHub connector used to create this slice cannot write the binary Gradle wrapper JAR, so this first branch is documented for Android Studio rather than pretending a partial wrapper is complete.
+
+## Gateway override
+
+The default build points Sarah at the current public Genesis shadow endpoint. A later Node Zero or authenticated mobile gateway can be selected without changing Kotlin code by setting the Gradle property:
+
+```text
+SYNTHSARA_MOBILE_GATEWAY_URL=https://example.invalid/api/chat
+```
+
+The client refuses non-HTTPS gateway URLs. Do not place API secrets in this property or in a URL.
 
 ## v0.1 acceptance checks
 
@@ -61,7 +75,7 @@ This project does not replace, flash, root, or modify Android itself.
 4. Add voice input only behind a foreground, one-shot consent action.
 5. Add notification summaries without granting reply/action authority by default.
 6. Add a signed/hash-chained local Witness implementation for launcher events.
-7. Add endpoint abstraction so production can prefer a dedicated authenticated mobile gateway rather than coupling the client to a public shadow URL.
+7. Put the production mobile gateway behind authenticated server-side credentials and preserve the current private/no-learning envelope contract.
 
 ## Boundary
 
