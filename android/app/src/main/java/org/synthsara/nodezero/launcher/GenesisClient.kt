@@ -23,8 +23,8 @@ internal object GenesisClient {
             "Message must be $MAX_MESSAGE_LENGTH characters or fewer."
         }
 
-        val endpoint = BuildConfig.SARAH_GATEWAY_URL.trim()
-        require(endpoint.startsWith("https://")) {
+        val endpoint = URL(BuildConfig.SARAH_GATEWAY_URL.trim())
+        require(endpoint.protocol == "https") {
             "SynthSara mobile gateway must use HTTPS."
         }
 
@@ -37,7 +37,7 @@ internal object GenesisClient {
             .put("collective_learning", false)
             .put("pipeline_mode", "shadow")
 
-        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+        val connection = (endpoint.openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = TIMEOUT_MS
             readTimeout = TIMEOUT_MS
