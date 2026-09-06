@@ -2,8 +2,11 @@ import { randomUUID } from "node:crypto";
 
 const DEFAULT_GENESIS_BASE_URL = "https://genesis-seven-bice.vercel.app";
 const MAX_MESSAGE_LENGTH = 2000;
+const MAX_CORRECTION_LENGTH = 1000;
 const REQUEST_TIMEOUT_MS = 12000;
 const ALLOWED_PERSONAS = new Set(["sarah", "steven"]);
+const ALLOWED_OPERATIONS = new Set(["chat", "selector.propose", "selector.confirm"]);
+const ALLOWED_CHALLENGE_STATUSES = new Set(["CONFIRMED", "REJECTED", "CORRECTED"]);
 
 function sendJson(response, statusCode, payload, extraHeaders = {}) {
   response.statusCode = statusCode;
@@ -66,16 +69,35 @@ async function parseUpstreamResponse(upstream) {
   }
 }
 
+function createGenesisEnvelope(message, persona) {
+  return {
+    request_id: randomUUID(),
+    session_id: randomUUID(),
+    message,
+    persona,
+    consent_level: "private",
+    collective_learning: false,
+    pipeline_mode: "shadow",
+  };
+}
+
+function gatewayPayload(payload, upstreamStatus, operation) {
+  return {
+    ...payload,
+    gateway: {
+      node: "synthsara-node-zero",
+      route: "same-origin-private-proxy",
+      operation,
+      upstream_status: upstreamStatus,
+    },
+  };
+}
+
 export default async function handler(request, response) {
   const method = String(request.method || "GET").toUpperCase();
 
   if (method !== "GET" && method !== "POST") {
-    sendJson(
-      response,
-      405,
-      { error: "Method not allowed." },
-      { Allow: "GET, POST" },
-    );
+    sendJson(response, 405, { error: "Method not allowed." }, { Allow: "GET, POST" });
     return;
   }
 
@@ -83,20 +105,19 @@ export default async function handler(request, response) {
     if (method === "GET") {
       const upstream = await fetchGenesis("/api/o-series/status");
       const payload = await parseUpstreamResponse(upstream);
-      sendJson(response, upstream.status, {
-        ...payload,
-        gateway: {
-          node: "synthsara-node-zero",
-          route: "same-origin-private-proxy",
-          upstream_status: upstream.status,
-        },
-      });
+      sendJson(response, upstream.status, gatewayPayload(payload, upstream.status, "status"));
       return;
     }
 
     const body = parseRequestBody(request);
     if (!body) {
       sendJson(response, 400, { error: "A JSON object is required." });
+      return;
+    }
+
+    const operation = body.operation === undefined ? "chat" : body.operation;
+    if (typeof operation !== "string" || !ALLOWED_OPERATIONS.has(operation)) {
+      sendJson(response, 400, { error: "operation is not supported by the private gateway." });
       return;
     }
 
@@ -114,31 +135,88 @@ export default async function handler(request, response) {
       return;
     }
 
-    const genesisEnvelope = {
-      request_id: randomUUID(),
-      session_id: randomUUID(),
-      message,
-      persona,
-      consent_level: "private",
-      collective_learning: false,
-      pipeline_mode: "shadow",
-    };
+    const genesisEnvelope = createGenesisEnvelope(message, persona);
+    let upstreamPath = "/api/o-series/chat";
+    let upstreamBody = genesisEnvelope;
 
-    const upstream = await fetchGenesis("/api/o-series/chat", {
+    if (operation === "selector.propose") {
+      upstreamPath = "/api/o-series/selector/propose";
+    }
+
+    if (operation === "selector.confirm") {
+      const challengeStatus = typeof body.challenge_status === "string"
+        ? body.challenge_status.trim().toUpperCase()
+        : "";
+      if (!ALLOWED_CHALLENGE_STATUSES.has(challengeStatus)) {
+        sendJson(response, 400, {
+          error: "challenge_status must be CONFIRMED, REJECTED, or CORRECTED.",
+        });
+        return;
+      }
+
+      const selectedNodeId = body.selected_node_id === undefined ? null : body.selected_node_id;
+      if (selectedNodeId !== null && (
+        typeof selectedNodeId !== "string" || !/^SC-[0-9]{3}$/.test(selectedNodeId)
+      )) {
+        sendJson(response, 400, {
+          error: "selected_node_id must be null or a canonical SC-000 style identifier.",
+        });
+        return;
+      }
+
+      let correctionText = null;
+      if (body.correction_text !== undefined && body.correction_text !== null) {
+        if (typeof body.correction_text !== "string") {
+          sendJson(response, 400, { error: "correction_text must be a string or null." });
+          return;
+        }
+        correctionText = body.correction_text.trim();
+        if (!correctionText || correctionText.length > MAX_CORRECTION_LENGTH) {
+          sendJson(response, 400, {
+            error: `correction_text must contain between 1 and ${MAX_CORRECTION_LENGTH} characters when supplied.`,
+          });
+          return;
+        }
+      }
+
+      if (challengeStatus === "CONFIRMED" && selectedNodeId === null) {
+        sendJson(response, 400, { error: "CONFIRMED requires selected_node_id." });
+        return;
+      }
+      if (challengeStatus === "REJECTED" && (selectedNodeId !== null || correctionText !== null)) {
+        sendJson(response, 400, {
+          error: "REJECTED requires no selected node and no correction text.",
+        });
+        return;
+      }
+      if (challengeStatus === "CORRECTED" && selectedNodeId === null && correctionText === null) {
+        sendJson(response, 400, {
+          error: "CORRECTED requires an alternate node, correction text, or both.",
+        });
+        return;
+      }
+
+      upstreamPath = "/api/o-series/selector/confirm";
+      upstreamBody = {
+        request: genesisEnvelope,
+        selected_node_id: selectedNodeId,
+        challenge_status: challengeStatus,
+        correction_text: correctionText,
+      };
+    }
+
+    const upstream = await fetchGenesis(upstreamPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(genesisEnvelope),
+      body: JSON.stringify(upstreamBody),
     });
     const payload = await parseUpstreamResponse(upstream);
 
-    sendJson(response, upstream.status, {
-      ...payload,
-      gateway: {
-        node: "synthsara-node-zero",
-        route: "same-origin-private-proxy",
-        upstream_status: upstream.status,
-      },
-    });
+    sendJson(
+      response,
+      upstream.status,
+      gatewayPayload(payload, upstream.status, operation),
+    );
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "AbortError";
     sendJson(response, timedOut ? 504 : 502, {
