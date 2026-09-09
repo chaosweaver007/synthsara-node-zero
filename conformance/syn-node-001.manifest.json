@@ -1,0 +1,32 @@
+{
+  "id": "SYN-NODE-001",
+  "title": "Minimal Sovereign Reference Node",
+  "version": "0.1.0",
+  "status": "reference-prototype",
+  "conformanceProtocol": "SYN-CONF-001",
+  "purpose": "Provide the smallest executable reference model that can pass or fail Synthsara constitutional invariants without requiring the wider mythology or worldview.",
+  "vetoGates": [
+    "sovereignty-constant",
+    "worth-non-jurisdictional",
+    "dissent-no-rights-penalty",
+    "guardian-advisory",
+    "memory-correction-preserves-history",
+    "exit-revokes-authority"
+  ],
+  "acceptanceScenario": [
+    "create local identity",
+    "grant a narrow consent scope",
+    "record a contribution and increase WORTH",
+    "record and correct a memory while preserving provenance",
+    "oppose a governance proposal without losing rights",
+    "decline a Guardian recommendation without penalty",
+    "export state",
+    "exit and revoke continuing authority"
+  ],
+  "nonClaims": [
+    "This prototype is not a production identity system.",
+    "This prototype is not a cryptographically immutable ledger.",
+    "Passing the suite does not prove universal ethical correctness.",
+    "WORTH is treated only as a non-transferable contribution signal in this reference model."
+  ]
+}
