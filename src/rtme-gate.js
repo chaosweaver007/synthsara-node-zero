@@ -8,6 +8,33 @@ export const RTME_GATE_POLICY = Object.freeze({
   executionMustRecheckConsent: true,
 });
 
+const FORBIDDEN_PARAMETER_KEYS = Object.freeze([
+  "__proto__",
+  "prototype",
+  "constructor",
+]);
+
+const CAPABILITY_PARAMETER_SCHEMAS = Object.freeze({
+  "canvas.generate": Object.freeze({
+    allowedKeys: Object.freeze(["resolution", "aspectRatio", "stylePreset"]),
+    validators: Object.freeze({
+      resolution: (value) => typeof value === "string" && value.trim().length > 0,
+      aspectRatio: (value) => typeof value === "string" && value.trim().length > 0,
+      stylePreset: (value) => typeof value === "string" && value.trim().length > 0,
+    }),
+  }),
+  "doc:write": Object.freeze({
+    allowedKeys: Object.freeze(["title"]),
+    validators: Object.freeze({
+      title: (value) => typeof value === "string" && value.trim().length > 0,
+    }),
+  }),
+  "vault:export": Object.freeze({
+    allowedKeys: Object.freeze([]),
+    validators: Object.freeze({}),
+  }),
+});
+
 function requireText(value, label) {
   if (typeof value !== "string" || !value.trim()) {
     throw new TypeError(`${label} must be a non-empty string.`);
@@ -25,6 +52,95 @@ function normalizeTime(value, label) {
 
 function clone(value) {
   return structuredClone(value);
+}
+
+function deepFreeze(value, seen = new WeakSet()) {
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+  if (seen.has(value)) {
+    return value;
+  }
+  seen.add(value);
+  for (const key of Reflect.ownKeys(value)) {
+    deepFreeze(value[key], seen);
+  }
+  return Object.freeze(value);
+}
+
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function containsForbiddenParameterKey(value, seen = new WeakSet()) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  if (seen.has(value)) {
+    return false;
+  }
+  seen.add(value);
+
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key !== "string") {
+      return true;
+    }
+    if (FORBIDDEN_PARAMETER_KEYS.includes(key)) {
+      return true;
+    }
+    if (containsForbiddenParameterKey(value[key], seen)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function validateCapabilityParameters(capability, parameters) {
+  const schema = CAPABILITY_PARAMETER_SCHEMAS[capability];
+  if (!schema) {
+    return {
+      pass: false,
+      detail: `No parameter schema is registered for capability ${capability}.`,
+    };
+  }
+  if (!isPlainObject(parameters)) {
+    return {
+      pass: false,
+      detail: "Parameters must be a plain object.",
+    };
+  }
+  if (containsForbiddenParameterKey(parameters)) {
+    return {
+      pass: false,
+      detail: "Parameters contain a forbidden prototype-affecting key.",
+    };
+  }
+
+  const allowed = new Set(schema.allowedKeys);
+  for (const key of Object.keys(parameters)) {
+    if (!allowed.has(key)) {
+      return {
+        pass: false,
+        detail: `Unknown parameter ${key} for capability ${capability}.`,
+      };
+    }
+    const validator = schema.validators[key];
+    if (typeof validator !== "function" || !validator(parameters[key])) {
+      return {
+        pass: false,
+        detail: `Invalid value for parameter ${key} on capability ${capability}.`,
+      };
+    }
+  }
+
+  return {
+    pass: true,
+    detail: `Parameters conform to the registered schema for ${capability}.`,
+  };
 }
 
 function isSha256(value) {
@@ -75,13 +191,16 @@ export function createRtmeIntent({
   if (!Array.isArray(unresolvedAssumptions)) {
     throw new TypeError("unresolvedAssumptions must be an array.");
   }
+
+  const clonedParameters = clone(parameters);
+
   return Object.freeze({
     intentId: requireText(intentId, "Intent id"),
     userId: requireText(userId, "Intent user id"),
     capability: requireText(capability, "Intent capability"),
     purpose: requireText(purpose, "Intent purpose"),
     recipient: requireText(recipient, "Intent recipient"),
-    parameters: clone(parameters),
+    parameters: deepFreeze(clonedParameters),
     rawIntentHash: rawIntentHash.toLowerCase(),
     truthDisclosureComplete: Boolean(truthDisclosureComplete),
     unresolvedAssumptions: Object.freeze(unresolvedAssumptions.map((item) => requireText(item, "Assumption"))),
@@ -152,6 +271,14 @@ export function evaluateRtmeGate({ intent, consent, guardian, now = new Date() }
     intent.recipient === consent.recipient,
     "Execution recipient must exactly match the granted recipient.",
   );
+
+  const parameterSchema = validateCapabilityParameters(intent.capability, intent.parameters);
+  add(
+    "parameter-schema",
+    parameterSchema.pass,
+    parameterSchema.detail,
+  );
+
   add(
     "guardian-binding",
     guardian.intentId === intent.intentId && guardian.consentId === consent.consentId,
@@ -217,7 +344,7 @@ export function compileRtmeKernelRequest({ intent, consent, guardian, now = new 
       capability: intent.capability,
       purpose: intent.purpose,
       recipient: intent.recipient,
-      parameters: clone(intent.parameters),
+      parameters: deepFreeze(clone(intent.parameters)),
       rawIntentHash: intent.rawIntentHash,
       irreversible: intent.irreversible,
       irreversibleConfirmation: intent.irreversibleConfirmation,
