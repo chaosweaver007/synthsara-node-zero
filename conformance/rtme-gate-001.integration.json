@@ -1,0 +1,41 @@
+{
+  "schema": "synthsara.rtme-gate-001.integration.v1",
+  "protocol": "SYN-CONF-001/RTME-GATE-001",
+  "title": "Node Zero RTME intention-to-action preflight",
+  "governing_invariant": "intent != authority",
+  "node_zero_role": "preflight only",
+  "rtme_kernel_role": "issue and validate short-lived execution authority",
+  "veto_gates": [
+    "consent_active",
+    "user_binding",
+    "capability_scope",
+    "purpose_scope",
+    "recipient_scope",
+    "guardian_binding",
+    "guardian_advisory",
+    "guardian_clear",
+    "truth_disclosure",
+    "assumptions_resolved",
+    "irreversible_confirmation",
+    "intent_provenance"
+  ],
+  "authority_firewalls": {
+    "raw_prompt_may_execute": false,
+    "worth_may_authorize": false,
+    "consensus_may_authorize": false,
+    "guardian_may_become_sovereign": false,
+    "intent_alone_may_execute": false
+  },
+  "execution_contract": {
+    "current_consent_must_be_rechecked_by_rtme": true,
+    "signed_action_token_required_by_rtme": true,
+    "token_replay_must_be_rejected": true,
+    "failure_must_not_be_reinterpreted_as_success": true
+  },
+  "reference_implementation": {
+    "node_zero_module": "src/rtme-gate.js",
+    "node_zero_tests": "tests/rtme-gate.test.mjs",
+    "rtme_repository": "chaosweaver007/RTME",
+    "rtme_protocol": "docs/RTME-GATE-001.md"
+  }
+}
