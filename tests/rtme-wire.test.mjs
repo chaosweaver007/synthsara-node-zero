@@ -93,33 +93,40 @@ for (const vector of corpus.vectors) {
         });
 
         assert.equal(result.status, 200);
-        const forwarded = Object.fromEntries(
-          Object.entries(captured.options.headers || {}).map(([key, value]) => [key.toLowerCase(), value]),
-        );
-        assert.equal(forwarded.cookie, undefined);
-        assert.equal(forwarded.authorization, undefined);
-        assert.equal(forwarded["x-device-id"], undefined);
+        const forwarded = new Headers(captured.options.headers || {});
+        assert.equal(forwarded.get("cookie"), null);
+        assert.equal(forwarded.get("authorization"), null);
+        assert.equal(forwarded.get("x-device-id"), null);
         break;
       }
 
       case "WIRE-011":
       case "WIRE-012":
-      case "WIRE-013": { // redirect policy must be manual/validated by production proxy
+      case "WIRE-013": { // production proxy must refuse upstream redirects without following
         process.env.GENESIS_BASE_URL = "https://genesis.example";
+        const redirectTargets = {
+          "WIRE-011": "http://127.0.0.1/internal",
+          "WIRE-012": "http://169.254.169.254/latest/meta-data/",
+          "WIRE-013": "http://10.0.0.7/private",
+        };
+        let fetchCalls = 0;
         let capturedOptions;
         globalThis.fetch = async (_url, options = {}) => {
+          fetchCalls += 1;
           capturedOptions = options;
-          return new Response(JSON.stringify({ ok: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
+          return new Response(null, {
+            status: 302,
+            headers: { location: redirectTargets[vector.id] },
           });
         };
-        await invoke({ method: "POST", body: { message: "bounded message", persona: "sarah" } });
-        assert.equal(
-          capturedOptions.redirect,
-          "manual",
-          `${vector.id} ${vector.expected}: production proxy does not explicitly disable automatic redirect following`,
-        );
+
+        const result = await invoke({
+          method: "POST",
+          body: { message: "bounded message", persona: "sarah" },
+        });
+        assert.equal(capturedOptions.redirect, "manual");
+        assert.equal(fetchCalls, 1, `${vector.id}: proxy must not follow the redirect`);
+        assert.equal(result.status, 502, `${vector.id}: redirect must fail closed`);
         break;
       }
 
@@ -129,44 +136,29 @@ for (const vector of corpus.vectors) {
         );
         break;
 
-      case "WIRE-015": { // userinfo host confusion must not escape the approved origin
+      case "WIRE-015": { // userinfo/host confusion must fail before network dispatch
         process.env.GENESIS_BASE_URL = "https://allowed.example@evil.example";
-        let requestedUrl;
-        globalThis.fetch = async (url) => {
-          requestedUrl = String(url);
-          return new Response(JSON.stringify({ ok: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
+        let fetchCalls = 0;
+        globalThis.fetch = async () => {
+          fetchCalls += 1;
+          return new Response(JSON.stringify({ should_not: "run" }), { status: 200 });
         };
-        await invoke({ method: "GET" });
-        const parsed = new URL(requestedUrl);
-        assert.equal(
-          parsed.hostname,
-          "allowed.example",
-          `${vector.id} ${vector.expected}: configured base URL can select an unapproved hostname`,
-        );
-        assert.equal(parsed.username, "");
+        const result = await invoke({ method: "GET" });
+        assert.equal(fetchCalls, 0, `${vector.id}: invalid authority must be rejected before fetch`);
+        assert.equal(result.status, 502);
         break;
       }
 
-      case "WIRE-016": { // undeclared ports must be rejected
+      case "WIRE-016": { // undeclared ports must fail before network dispatch
         process.env.GENESIS_BASE_URL = "https://genesis.example:8443";
-        let requestedUrl;
-        globalThis.fetch = async (url) => {
-          requestedUrl = String(url);
-          return new Response(JSON.stringify({ ok: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
+        let fetchCalls = 0;
+        globalThis.fetch = async () => {
+          fetchCalls += 1;
+          return new Response(JSON.stringify({ should_not: "run" }), { status: 200 });
         };
-        await invoke({ method: "GET" });
-        const parsed = new URL(requestedUrl);
-        assert.equal(
-          parsed.port,
-          "",
-          `${vector.id} ${vector.expected}: production proxy accepts an undeclared configured port`,
-        );
+        const result = await invoke({ method: "GET" });
+        assert.equal(fetchCalls, 0, `${vector.id}: undeclared port must be rejected before fetch`);
+        assert.equal(result.status, 502);
         break;
       }
 
