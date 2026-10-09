@@ -4,6 +4,9 @@ Status: INSPECTED — ADVERSARIAL CAMPAIGN PENDING
 Protocol: UDS-E1 v0.1.1
 Node Zero version: 0.3.0
 Inspection base: `fd7291ac94a0df0b89ec6f5140d58bee55241a5c`
+Companion wire specification: `docs/uds-e1/RTME-WIRE-001.md`
+Adversarial corpus: `conformance/rtme-wire-001.vectors.json`
+Transport invariant: `Transport != Execution Power`
 
 ## Claim Boundary
 
@@ -15,7 +18,7 @@ The network claim is split into three testable boundaries rather than one global
 
 Current evidence state: `RTME-NET-001.X = 0`.
 
-Static inspection identifies test targets only. It does not advance the adversarial-testing dimension.
+Static inspection identifies test targets only. It does not advance the adversarial-testing dimension. The companion RTME-WIRE-001 document is a candidate specification and likewise does not advance the evidence state until its vectors exercise production-coupled transport surfaces.
 
 ## Inspected Runtime Surfaces
 
@@ -61,6 +64,19 @@ The inspected proxy constructs its upstream headers from `Accept` plus explicitl
 
 When the gateway status check or remote Mirror path fails, the inspected client bridge falls back to local reflection. No secondary public fallback endpoint is visible in the inspected browser bridge. This observation remains subject to runtime testing.
 
+## Transport Authority Separation
+
+RTME-WIRE-001 adds a candidate wire-level boundary for future remote RTME effects:
+
+```text
+Authenticated transport != authenticated authority
+K_node != K_auth
+```
+
+A node certificate, mTLS session, reverse-proxy identity, internal-network location, or ambient session credential must never stand in for an independently valid ActionToken. Transport may authenticate who sent an envelope; only the constitutional execution path may determine whether its contained authority is valid.
+
+Payload hashing alone is not authenticity. Any envelope digest that matters to security must itself be authenticated, and the contained ActionToken must still be independently verified under its authority key.
+
 ## Proposed Harness Correction
 
 The initially proposed `tests/rtme-network.test.mjs` must not be committed unchanged as evidence. It contains tests that can pass without exercising production networking behavior:
@@ -76,7 +92,9 @@ The next baseline campaign should be separated by layer:
 
 1. **Proxy policy tests** — import the real `api/genesis.js` handler and intercept `globalThis.fetch`; verify exact upstream URL, path, headers, body, operation, redirect policy, and failure behavior.
 2. **Browser dispatch tests** — exercise actual bridge boot/dispatch behavior; confirm the automatic status GET and later prove a strict-local mode once such a mode exists.
-3. **Process egress tests** — use a separate process/network harness for DNS/socket-level assertions. Fetch mocks alone cannot establish `E_network = 0` at the process boundary.
+3. **Wire-frame tests** — when RTME-WIRE-001 is implemented, exercise the production framing/parser path against `conformance/rtme-wire-001.vectors.json`; do not substitute helper-only tests for the live implementation.
+4. **Process egress tests** — use a separate process/network harness for DNS/socket-level assertions. Fetch mocks alone cannot establish `E_network = 0` at the process boundary.
+5. **No-effect remote adapter** — only after the wire/parser baseline exists, exercise a bounded echo/hash capability across a real network before placing consequential remote effects behind the transport.
 
 ## Candidate Falsifiers
 
@@ -88,7 +106,11 @@ A bounded network claim is defeated by any observation such as:
 - ambient Cookie, Authorization, durable account/device identifier, local-storage token, or undeclared telemetry in an upstream envelope;
 - upstream redirect causing unapproved origin expansion;
 - silent remote fallback to an undeclared destination;
-- crash/error handling initiating undeclared telemetry.
+- crash/error handling initiating undeclared telemetry;
+- valid node/transport credentials being accepted as RTME execution authority without a valid ActionToken;
+- payload or recipient mutation surviving authenticated frame verification;
+- replay of an expired or previously consumed transport envelope;
+- remote-effect uncertainty being converted into a blind retry instead of `RECOVERY_REQUIRED` reconciliation.
 
 ## Provenance Note
 
@@ -96,4 +118,6 @@ Git commit IDs and Git blob IDs are version-control identifiers, not SHA-256 art
 
 ## Next Gate
 
-Create the production-coupled proxy policy baseline before remediation. Preserve any RED finding, then patch and rerun the identical test before updating `RTME-NET-001.X`.
+Keep `RTME-NET-001.X = 0` while RTME-WIRE-001 remains specification-only.
+
+Create the production-coupled proxy policy baseline before remediation, then implement the bounded wire/frame path and run the hostile-vector corpus against production code. Preserve every RED finding, patch the production surface, and rerun the identical vector before updating the adversarial evidence dimension.

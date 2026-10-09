@@ -7,6 +7,13 @@ const REQUEST_TIMEOUT_MS = 12000;
 const ALLOWED_PERSONAS = new Set(["sarah", "steven"]);
 const ALLOWED_OPERATIONS = new Set(["chat", "selector.propose", "selector.confirm"]);
 const ALLOWED_CHALLENGE_STATUSES = new Set(["CONFIRMED", "REJECTED", "CORRECTED"]);
+const ALLOWED_GENESIS_HOSTS = new Set([
+  "genesis-seven-bice.vercel.app",
+  // RFC-reserved fixture hosts used only by the repository test harness.
+  "genesis.example",
+  "allowed.example",
+]);
+const ALLOWED_GENESIS_PORTS = new Set(["", "443"]);
 
 function sendJson(response, statusCode, payload, extraHeaders = {}) {
   response.statusCode = statusCode;
@@ -37,20 +44,76 @@ function parseRequestBody(request) {
   return null;
 }
 
+function validateAndResolveBaseUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis origin is missing or invalid.");
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis origin is malformed.");
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis origin must use HTTPS.");
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis origin must not contain userinfo.");
+  }
+
+  const normalizedHost = parsed.hostname.toLowerCase();
+  if (!ALLOWED_GENESIS_HOSTS.has(normalizedHost)) {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis hostname is not approved.");
+  }
+
+  if (!ALLOWED_GENESIS_PORTS.has(parsed.port)) {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis port is not approved.");
+  }
+
+  if (parsed.pathname !== "/") {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis origin must not contain a path prefix.");
+  }
+
+  if (parsed.search || parsed.hash) {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis origin must not contain query or fragment data.");
+  }
+
+  return parsed.origin;
+}
+
 async function fetchGenesis(path, options = {}) {
-  const baseUrl = (process.env.GENESIS_BASE_URL || DEFAULT_GENESIS_BASE_URL).replace(/\/$/, "");
+  const canonicalOrigin = validateAndResolveBaseUrl(
+    process.env.GENESIS_BASE_URL || DEFAULT_GENESIS_BASE_URL,
+  );
+  const target = new URL(path, `${canonicalOrigin}/`);
+  if (target.origin !== canonicalOrigin) {
+    throw new Error("NETWORK_POLICY_VIOLATION: Genesis endpoint escaped the approved origin.");
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const sanitizedHeaders = new Headers(options.headers || {});
+  sanitizedHeaders.delete("cookie");
+  sanitizedHeaders.delete("authorization");
+  sanitizedHeaders.delete("x-device-id");
+  sanitizedHeaders.set("Accept", "application/json");
 
   try {
-    return await fetch(`${baseUrl}${path}`, {
+    const upstream = await fetch(target.toString(), {
       ...options,
       signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        ...(options.headers || {}),
-      },
+      redirect: "manual",
+      headers: sanitizedHeaders,
     });
+
+    if (upstream.status >= 300 && upstream.status < 400) {
+      throw new Error("NETWORK_POLICY_VIOLATION: Genesis redirect refused.");
+    }
+
+    return upstream;
   } finally {
     clearTimeout(timeout);
   }

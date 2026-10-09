@@ -1,0 +1,128 @@
+{
+  "protocol": "RTME-WIRE-001",
+  "status": "candidate-adversarial-corpus",
+  "invariant": "Transport != Execution Power",
+  "evidence_note": "Passing these vectors is not sufficient by itself to establish process-level or network-level confinement; production-coupled harnesses are required.",
+  "vectors": [
+    {
+      "id": "WIRE-001",
+      "name": "payload-byte-mutation",
+      "attack": "Alter one byte of canonical payload without changing authenticated frame metadata.",
+      "expected": "DROP_INTEGRITY"
+    },
+    {
+      "id": "WIRE-002",
+      "name": "digest-and-payload-rewrite",
+      "attack": "Alter payload and recompute SHA-256 while retaining the original node signature.",
+      "expected": "DROP_SIGNATURE"
+    },
+    {
+      "id": "WIRE-003",
+      "name": "transport-replay",
+      "attack": "Replay an otherwise valid envelope with the same transport nonce.",
+      "expected": "DROP_REPLAY"
+    },
+    {
+      "id": "WIRE-004",
+      "name": "expired-envelope",
+      "attack": "Deliver a correctly signed wire envelope after expires_at.",
+      "expected": "DROP_EXPIRED"
+    },
+    {
+      "id": "WIRE-005",
+      "name": "valid-node-invalid-authority",
+      "attack": "Use a valid K_node transport signature containing an ActionToken invalid under K_auth.",
+      "expected": "REFUSE_AUTHORITY"
+    },
+    {
+      "id": "WIRE-006",
+      "name": "recipient-rebinding",
+      "attack": "Deliver a frame signed for receiver_node_id Node-B to Node-C.",
+      "expected": "DROP_RECIPIENT_BINDING"
+    },
+    {
+      "id": "WIRE-007",
+      "name": "oversized-frame",
+      "attack": "Declare payload_length above configured protocol maximum.",
+      "expected": "DROP_FRAME_LIMIT"
+    },
+    {
+      "id": "WIRE-008",
+      "name": "duplicate-json-key",
+      "attack": "Supply semantically ambiguous JSON with duplicate object keys.",
+      "expected": "DROP_CANONICALIZATION"
+    },
+    {
+      "id": "WIRE-009",
+      "name": "noncanonical-number",
+      "attack": "Supply unsupported or noncanonical numeric forms such as NaN/Infinity or ambiguous encodings.",
+      "expected": "DROP_CANONICALIZATION"
+    },
+    {
+      "id": "WIRE-010",
+      "name": "ambient-credential-forwarding",
+      "attack": "Inject inbound Cookie/Authorization/device identity and observe whether proxy forwards it without explicit contract authorization.",
+      "expected": "BLOCK_AMBIENT_CREDENTIAL"
+    },
+    {
+      "id": "WIRE-011",
+      "name": "redirect-loopback",
+      "attack": "Allowed upstream returns redirect to 127.0.0.1 or ::1.",
+      "expected": "NETWORK_POLICY_VIOLATION"
+    },
+    {
+      "id": "WIRE-012",
+      "name": "redirect-metadata",
+      "attack": "Allowed upstream returns redirect to 169.254.169.254 or equivalent link-local metadata target.",
+      "expected": "NETWORK_POLICY_VIOLATION"
+    },
+    {
+      "id": "WIRE-013",
+      "name": "redirect-private-range",
+      "attack": "Allowed upstream redirects to RFC1918/private address not explicitly authorized.",
+      "expected": "NETWORK_POLICY_VIOLATION"
+    },
+    {
+      "id": "WIRE-014",
+      "name": "dns-rebinding",
+      "attack": "Hostname passes policy resolution, then resolves to a forbidden address at connection time.",
+      "expected": "NETWORK_POLICY_VIOLATION"
+    },
+    {
+      "id": "WIRE-015",
+      "name": "userinfo-host-confusion",
+      "attack": "Use a URL such as https://allowed.example@evil.example/ to test authority based on naive string matching.",
+      "expected": "NETWORK_POLICY_VIOLATION"
+    },
+    {
+      "id": "WIRE-016",
+      "name": "undeclared-port",
+      "attack": "Use an allowed hostname with a port absent from the signed AdapterManifest destination policy.",
+      "expected": "NETWORK_POLICY_VIOLATION"
+    },
+    {
+      "id": "WIRE-017",
+      "name": "undeclared-telemetry",
+      "attack": "Trigger error/crash handling and detect any analytics, diagnostics, or secondary network request not declared and consented.",
+      "expected": "BLOCK_UNDECLARED_TELEMETRY"
+    },
+    {
+      "id": "WIRE-018",
+      "name": "remote-effect-response-loss",
+      "attack": "Allow remote effect to potentially complete, then sever transport before definitive response is witnessed.",
+      "expected": "RECOVERY_REQUIRED"
+    },
+    {
+      "id": "WIRE-019",
+      "name": "valid-token-over-trusted-wire-does-not-bypass-consent",
+      "attack": "Present a cryptographically valid ActionToken after current consent has been revoked while mTLS remains valid.",
+      "expected": "REFUSE_CURRENT_CONSENT"
+    },
+    {
+      "id": "WIRE-020",
+      "name": "transport-identity-privilege-escalation",
+      "attack": "Attempt execution with valid node credentials but no valid ActionToken.",
+      "expected": "REFUSE_AUTHORITY"
+    }
+  ]
+}
