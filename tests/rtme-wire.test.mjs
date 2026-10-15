@@ -232,8 +232,10 @@ for (const vector of corpus.vectors) {
         assert.equal(
           fetchCalls,
           0,
-          `${vector.id} ${vector.expected}: production transport path does not recheck current RTME consent`,
+          `${vector.id} ${vector.expected}: Genesis chat gateway must refuse execution-shaped input`,
         );
+        // This confirms a *chat ingress guard*, not live executor-side consent.
+        assert.fail(`${vector.id} ${vector.expected}: NOT_IMPLEMENTED — no remote RTME execution route verifies fresh authoritative consent at effect time`);
         break;
       }
 
@@ -255,8 +257,10 @@ for (const vector of corpus.vectors) {
         assert.equal(
           fetchCalls,
           0,
-          `${vector.id} ${vector.expected}: authenticated transport reaches upstream without an ActionToken boundary`,
+          `${vector.id} ${vector.expected}: Genesis chat gateway must refuse transport-authenticated execution-shaped input`,
         );
+        // Rejecting a chat request does not prove verified ActionToken execution.
+        assert.fail(`${vector.id} ${vector.expected}: NOT_IMPLEMENTED — no live RTME executor verifies signed K_auth authority independent of node identity`);
         break;
       }
 
