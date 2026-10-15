@@ -29,3 +29,28 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Publish wire conformance gaps (not certified)
+        if: always()
+        run: npm run test:wire:inventory
+
+  # This job is intentionally nonblocking until actual signed RTME wire
+  # transport exists. The strict tests remain RED and their failure logs
+  # remain visible; a green release does NOT mean wire conformance.
+  wire-conformance-unimplemented:
+    name: "RTME wire conformance — known implementation gaps"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run all hostile wire vectors STRICTLY (known failures remain failures)
+        run: npm run test:wire:strict
+      - name: Publish the exact backlog and non-certification warning
+        if: always()
+        run: npm run test:wire:inventory

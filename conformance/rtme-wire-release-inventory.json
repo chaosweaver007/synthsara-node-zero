@@ -1,0 +1,79 @@
+{
+  "schema": "synthsara.rtme-wire-release-inventory.v1",
+  "baseline": {
+    "source": "https://github.com/chaosweaver007/synthsara-node-zero/actions/runs/37920127770",
+    "date": "2026-10-09",
+    "tests": 82,
+    "passed": 69,
+    "failed": 13
+  },
+  "releaseMeaning": "Green release checks cover implemented behavior only. Listed wire vectors remain TODO and cannot be represented as conformance successes.",
+  "strictCommand": "npm run test:wire:strict",
+  "requirements": [
+    {
+      "id": "WIRE-001",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Implement production RTME frame parser and reject authenticated payload byte mutations."
+    },
+    {
+      "id": "WIRE-002",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Bind canonical payload digest to verified node signature; reject digest-and-payload rewrites."
+    },
+    {
+      "id": "WIRE-003",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Persist/recheck transport nonce replay state on the receiving RTME transport."
+    },
+    {
+      "id": "WIRE-004",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Verify signed transport envelope expiry against bounded clock skew."
+    },
+    {
+      "id": "WIRE-005",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Independently verify ActionToken under K_auth; node signature alone is not authority."
+    },
+    {
+      "id": "WIRE-006",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Verify authenticated receiver_node_id matches actual receiving node."
+    },
+    {
+      "id": "WIRE-007",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Enforce frame payload byte limit before semantic deserialization."
+    },
+    {
+      "id": "WIRE-008",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Reject duplicate JSON keys before semantic deserialization under canonical wire profile."
+    },
+    {
+      "id": "WIRE-009",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Reject noncanonical or unsupported numeric representations before semantic deserialization."
+    },
+    {
+      "id": "WIRE-014",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Pin and validate DNS addresses at connection time, including rebinding scenarios; mocks alone do not prove this."
+    },
+    {
+      "id": "WIRE-018",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "Persist RECOVERY_REQUIRED for ambiguous remote effect results; never blindly retry."
+    },
+    {
+      "id": "WIRE-019",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "On actual remote execution path recheck CURRENT authenticated consent, not user-supplied consent_state."
+    },
+    {
+      "id": "WIRE-020",
+      "status": "NOT_IMPLEMENTED",
+      "requirement": "On actual remote execution path require signed ActionToken; node/mTLS identity alone is not execution authority."
+    }
+  ]
+}

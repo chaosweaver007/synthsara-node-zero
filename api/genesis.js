@@ -14,6 +14,16 @@ const ALLOWED_GENESIS_HOSTS = new Set([
   "allowed.example",
 ]);
 const ALLOWED_GENESIS_PORTS = new Set(["", "443"]);
+const CHAT_ONLY_FIELDS = new Set(["operation", "message", "persona"]);
+const SELECTOR_CONFIRM_FIELDS = new Set([
+  "operation", "message", "persona", "challenge_status", "selected_node_id", "correction_text",
+]);
+// Never accept an effectful RTME authorization object through the Genesis
+// shadow-chat route. This proxy is NOT an RTME action executor.
+const EXECUTION_SHAPED_FIELDS = new Set([
+  "action_token", "consent_state", "authorization", "authorization_id",
+  "capability", "requested_capability", "parameters", "node_authenticated",
+]);
 
 function sendJson(response, statusCode, payload, extraHeaders = {}) {
   response.statusCode = statusCode;
@@ -178,9 +188,25 @@ export default async function handler(request, response) {
       return;
     }
 
+    // Fail closed instead of silently dropping unrecognized user-supplied
+    // authority fields. An authenticated transport does not grant action power.
+    if (request.node_authenticated !== undefined ||
+        [...EXECUTION_SHAPED_FIELDS].some((field) => Object.hasOwn(body, field))) {
+      sendJson(response, 400, { error: "RTME execution authority is not accepted by the private chat gateway." });
+      return;
+    }
+
     const operation = body.operation === undefined ? "chat" : body.operation;
     if (typeof operation !== "string" || !ALLOWED_OPERATIONS.has(operation)) {
       sendJson(response, 400, { error: "operation is not supported by the private gateway." });
+      return;
+    }
+
+    const permittedFields = operation === "selector.confirm"
+      ? SELECTOR_CONFIRM_FIELDS
+      : CHAT_ONLY_FIELDS;
+    if (Object.keys(body).some((field) => !permittedFields.has(field))) {
+      sendJson(response, 400, { error: "Unrecognized private gateway field." });
       return;
     }
 
