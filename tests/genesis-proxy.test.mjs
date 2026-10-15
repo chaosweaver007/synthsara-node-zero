@@ -136,3 +136,40 @@ test("unsupported methods fail closed", async () => {
   assert.equal(result.status, 405);
   assert.equal(result.headers.get("allow"), "GET, POST");
 });
+
+test("execution-shaped private chat payload fails closed before upstream dispatch", async () => {
+  let fetchCalls = 0;
+  globalThis.fetch = async () => {
+    fetchCalls++;
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  };
+  const fields = [
+    { action_token: "forged", consent_state: "GRANTED" },
+    { capability: "vault:export", parameters: { destination: "remote" } },
+    { authorization_id: "unsigned-attempt" },
+    { unexpected_field: "data" },
+  ];
+  for (const extra of fields) {
+    const result = await invoke({
+      method: "POST",
+      body: { message: "ordinary chat", persona: "sarah", ...extra },
+    });
+    assert.equal(result.status, 400);
+  }
+  assert.equal(fetchCalls, 0, "execution-shaped content must never reach Genesis chat proxy upstream");
+});
+
+test("ambient node authentication claim cannot upgrade the chat route into an executor", async () => {
+  let fetchCalls = 0;
+  globalThis.fetch = async () => {
+    fetchCalls++;
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  };
+  const result = await invoke({
+    method: "POST",
+    node_authenticated: true,
+    body: { message: "execute", persona: "sarah" },
+  });
+  assert.equal(result.status, 400);
+  assert.equal(fetchCalls, 0);
+});
