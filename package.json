@@ -10,7 +10,9 @@
     "preview": "node scripts/serve.mjs dist",
     "conformance:deployment": "node scripts/deployment-conformance.mjs",
     "check": "node scripts/check.mjs",
-    "test": "npm run check && node --test tests/*.test.mjs"
+    "test": "npm run check && node scripts/run-release-tests.mjs",
+    "test:wire:strict": "node --test tests/rtme-wire.test.mjs",
+    "test:wire:inventory": "node scripts/report-wire-status.mjs"
   },
   "engines": {
     "node": ">=20.11.0"
