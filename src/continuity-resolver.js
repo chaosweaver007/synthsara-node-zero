@@ -13,8 +13,10 @@ function requireSubject(subject) {
   return subject.trim();
 }
 
+const ISO_INSTANT = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?(?:Z|[+-]\\d{2}:\\d{2})$/;
+
 function parseInstant(value) {
-  if (typeof value !== "string" || !value.trim()) return NaN;
+  if (typeof value !== "string" || !ISO_INSTANT.test(value)) return NaN;
   return Date.parse(value);
 }
 
