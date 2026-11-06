@@ -34,6 +34,7 @@ test("SYN-NODE-001 acceptance path keeps sovereignty constant while contribution
 
   const initial = node.snapshot();
   node.grantConsent("profile", "render-profile");
+  node.grantConsent("memory", "approved local memory");
   node.contribute("documentation", { artifact: "first-contribution" });
 
   const originalMemory = node.remember("display-name", "River", {
@@ -56,6 +57,7 @@ test("SYN-NODE-001 acceptance path keeps sovereignty constant while contribution
   const finalExport = node.exit();
   assert.equal(finalExport.status, NODE_STATUS.EXITED);
   assert.equal(finalExport.consent.profile.status, "revoked");
+  assert.equal(finalExport.consent.memory.status, "revoked");
   assert.equal(finalExport.sovereignty.current, initial.sovereignty.current);
 
   const report = evaluateSynNode001(finalExport);
