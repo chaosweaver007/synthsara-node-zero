@@ -93,6 +93,7 @@ test("SYN-CONT-001: malformed chains cannot be promoted to current truth", () =>
 
   assert.equal(reconstructMemory([], "entity:test").status, "missing");
   assert.throws(() => reconstructMemory([], "entity:test", { asOf: "not-a-date" }), TypeError);
+  assert.throws(() => reconstructMemory([], "entity:test", { asOf: "2026" }), TypeError);
 });
 
 test("SYN-CONT-001: erasure remains available after revocation, without retaining the deleted value in Witness", () => {
