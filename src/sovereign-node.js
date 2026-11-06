@@ -1,3 +1,5 @@
+import { reconstructMemory } from "./continuity-resolver.js";
+
 export const SYN_NODE_SCHEMA = "synthsara.syn-node-001.v1";
 
 export const NODE_STATUS = Object.freeze({
@@ -169,8 +171,17 @@ export function createSovereignNode(options = {}) {
     return clone(contribution);
   }
 
+  function requireMemoryConsent() {
+    if (!canUse("memory")) {
+      const error = new Error("Explicit memory consent is required for this action.");
+      error.code = "MEMORY_CONSENT_REQUIRED";
+      throw error;
+    }
+  }
+
   function remember(subject, value, provenance = {}) {
     requireActive(state);
+    requireMemoryConsent();
     const normalizedSubject = requireText(subject, "Memory subject");
     const at = clock();
     const entry = {
@@ -183,12 +194,13 @@ export function createSovereignNode(options = {}) {
       correctionReason: null,
     };
     state.memory.entries.push(entry);
-    recordWitness(state, "MEMORY_RECORDED", `Memory recorded for ${normalizedSubject}.`, at);
+    recordWitness(state, "MEMORY_RECORDED", "Consented local memory entry recorded.", at);
     return clone(entry);
   }
 
   function correctMemory(entryId, value, reason) {
     requireActive(state);
+    requireMemoryConsent();
     const normalizedEntryId = requireText(entryId, "Memory entry id");
     const original = state.memory.entries.find((entry) => entry.id === normalizedEntryId);
     if (!original) {
@@ -207,8 +219,34 @@ export function createSovereignNode(options = {}) {
       correctionReason: requireText(reason, "Correction reason"),
     };
     state.memory.entries.push(correction);
-    recordWitness(state, "MEMORY_CORRECTED", `Memory corrected for ${original.subject}; prior entry retained.`, at);
+    recordWitness(state, "MEMORY_CORRECTED", "Consented local memory corrected; prior entry retained.", at);
     return clone(correction);
+  }
+
+  /**
+   * Reconstruct approved local memory before using it in any future model
+   * context. This reference node does not send the result to Genesis.
+   */
+  function recall(subject, options = {}) {
+    requireActive(state);
+    requireMemoryConsent();
+    const reconstructed = reconstructMemory(state.memory.entries, subject, options);
+    recordWitness(state, "MEMORY_READ", "Consented local memory state reconstructed.", clock());
+    return clone(reconstructed);
+  }
+
+  /**
+   * User-directed erasure is permitted even after memory consent was revoked.
+   * All versions for this exact subject are removed from this in-memory node.
+   */
+  function eraseMemory(subject) {
+    requireActive(state);
+    const canonical = requireText(subject, "Memory subject");
+    const before = state.memory.entries.length;
+    state.memory.entries = state.memory.entries.filter((entry) => entry.subject !== canonical);
+    const deleted = before - state.memory.entries.length;
+    recordWitness(state, "MEMORY_ERASED", "User-directed local memory erasure completed.", clock());
+    return { erased: deleted };
   }
 
   function recordGovernancePosition(proposalId, position) {
@@ -295,6 +333,8 @@ export function createSovereignNode(options = {}) {
     contribute,
     remember,
     correctMemory,
+    recall,
+    eraseMemory,
     recordGovernancePosition,
     guardianRecommend,
     respondToGuardian,
